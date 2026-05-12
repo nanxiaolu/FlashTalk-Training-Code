@@ -8,7 +8,7 @@ import random
 import re
 from datetime import datetime
 
-import src._warning_filters  # noqa: F401 - silence noisy 3rd-party warnings  # pyright: ignore[reportMissingImports]
+import src._warning_filters
 import torch
 import torch.distributed as dist
 import torch.nn.functional as F

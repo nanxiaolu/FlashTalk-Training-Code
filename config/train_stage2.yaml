@@ -17,7 +17,7 @@ critic_lr: 4.0e-7
 max_grad_norm: 10.0
 timestep_shift: 5.0
 
-max_steps: 120
+max_steps: 100
 # Stage-2 uses two checkpoint cadences split by ``save_interval_switch_step``:
 #   step <  save_interval_switch_step => save every ``save_interval_first_stage`` steps
 #   step >= save_interval_switch_step => save every ``save_interval_second_stage`` steps
@@ -25,7 +25,7 @@ max_steps: 120
 # sparsely; the second phase saves frequently because quality plateaus and
 # best-checkpoint picking happens within a narrow window.
 save_interval_first_stage: 50
-save_interval_switch_step: 100
+save_interval_switch_step: 80
 save_interval_second_stage: 20
 
 # ===== Stage-1 -> Stage-2 initialization =====
@@ -41,7 +41,6 @@ text_guide_scale: 3.0
 audio_guide_scale: 4.0
 keep_k_chunks: -1  # -1 means use all chunks
 denoising_step_list: "1000,750,500,250"
-use_inject_motion_frames: true
 
 # ===== Validation (not used during training; see config/val_stage2.yaml) =====
 val_disable_cfg: false

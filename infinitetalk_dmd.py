@@ -94,7 +94,6 @@ class InfiniteTalkDMD(nn.Module):
         self.num_train_timestep = 1000
         self.min_step = int(0.02 * self.num_train_timestep)
         self.max_step = int(0.98 * self.num_train_timestep)
-        self.use_inject_motion_frames = getattr(config, 'use_inject_motion_frames', True)
         raw_steps = getattr(config, 'denoising_step_list', [1000, 750, 500, 250])
         self.raw_denoising_step_list = self._parse_raw_step_list(raw_steps)
         self.denoising_step_list = self._parse_denoising_step_list(raw_steps)
@@ -112,12 +111,11 @@ class InfiniteTalkDMD(nn.Module):
         self.latest_gen_loss_components = None
 
         logging.info(
-            "DMD config: stage=%s, use_inject_motion_frames=%s, "
+            "DMD config: stage=%s, "
             "raw_denoising_step_list=%s, denoising_step_list(shifted)=%s, "
             "dmd_loss_weight=%s, temporal_align_weight=%s, "
             "text_guide_scale=%s, audio_guide_scale=%s",
             self.stage,
-            self.use_inject_motion_frames,
             self.raw_denoising_step_list,
             self.denoising_step_list,
             self.dmd_loss_weight,

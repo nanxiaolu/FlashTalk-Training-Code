@@ -39,6 +39,7 @@ processed_data/*
 .github/
 save_audio/
 cursor_md_file/
+pyrightconfig.json
 
 # Temp
 tmp/

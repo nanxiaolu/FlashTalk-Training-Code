@@ -85,8 +85,6 @@ parser.add_argument("--text_guide_scale", type=float, default=5.0, help="CFG sca
 parser.add_argument("--audio_guide_scale", type=float, default=4.0, help="CFG scale for audio guidance")
 parser.add_argument("--denoising_step_list", type=str, default="1000,750,500,250",
                    help="Comma-separated denoising steps for self-forcing simulation")
-parser.add_argument("--use_inject_motion_frames", type=str2bool, default=True,
-                   help="Enable clean motion-frame injection for generator/critic losses")
 parser.add_argument("--use_fixed_reference_frame", type=str2bool, default=True,
                    help="If True, always use first frame as reference; otherwise random sample")
 parser.add_argument("--save_generator_latent_videos", type=str2bool, default=True,

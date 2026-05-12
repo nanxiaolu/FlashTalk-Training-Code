@@ -28,7 +28,7 @@ output_dir: outputs/flashtalk_stage1
 use_fixed_reference_frame: false
 
 # ===== Optimization =====
-max_steps: 700
+max_steps: 500
 save_interval: 100
 warmup_steps: 0
 gen_lr: 2.0e-6

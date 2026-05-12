@@ -58,6 +58,7 @@ loguru==0.7.3
 easydict==1.13
 requests==2.32.5
 packaging==25.0
+icecream==2.1.10
 PyYAML==6.0.3
 tensorboard==2.20.0
 matplotlib==3.5.2
