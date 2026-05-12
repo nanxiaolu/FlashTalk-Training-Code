@@ -1,0 +1,55 @@
+# ============================================================================
+# Stage-1 TRAIN config (full-parameter fine-tuning, flow-matching).
+#
+# This file is dedicated to ``mode=train``: it consumes a packed LMDB
+# produced by the preprocess pipeline. For preprocessing the bundled 32-video
+# minimum viable example, use ``config/preprocess_stage1_example.yaml``
+# (loaded by ``script/preprocess_stage1.sh``).
+# ============================================================================
+
+mode: train
+
+# ===== train (mode=train) =====
+# Points at the LMDB shipped on Baidu NetDisk and produced by running the
+# preprocess + pack pipeline on the full TalkCuts training set. The example
+# LMDB generated from 32 demo videos lives at
+# ``processed_data/example/train/example_stage1.lmdb`` and is meant only as
+# a smoke test of the data pipeline.
+lmdb_path: processed_data/talkcuts/train/stage1_sample_25030.lmdb
+
+# ===== Dataset (unused in train mode; kept for tooling consistency) =====
+# In mode=train the CSV is never read (samples come from LMDB), so we point
+# at the bundled example CSV just to keep the loader happy.
+dataset_dir: ""
+annotation_file: processed_data/example/train_data.csv
+
+# ===== Data / run =====
+output_dir: outputs/flashtalk_stage1
+use_fixed_reference_frame: false
+
+# ===== Optimization =====
+max_steps: 700
+save_interval: 100
+warmup_steps: 0
+gen_lr: 2.0e-6
+warmup_start_lr: 6.0e-7
+grad_accum_steps: 4
+max_grad_norm: 1.0
+timestep_shift: 5.0
+weight_decay: 0.01
+betas: (0.9, 0.99)
+
+# ===== Stage-1 losses =====
+flow_match_weight: 0.75
+face_loss_weight: 0.75
+temporal_loss_weight: 0.25
+face_loss_type: l2
+
+# ===== Runtime =====
+save_generator_latent_videos_interval: 50
+gradient_checkpointing: true
+fsdp_cpu_offload: false
+debug: false
+
+# ===== Resume (optional) =====
+# resume_from: outputs/flashtalk_stage1/.../checkpoint_xxx/

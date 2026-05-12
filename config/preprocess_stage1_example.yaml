@@ -1,0 +1,55 @@
+# ============================================================================
+# Stage-1 PREPROCESS config — minimum viable example.
+#
+# Loaded by ``script/preprocess_stage1.sh`` for the 32-video demo bundled with
+# the repo (under ``processed_data/example/train/``). The goal of this config is only
+# to let new users verify that the preprocess + pack pipeline runs end-to-end;
+# the resulting LMDB is too small to produce meaningful training results.
+#
+# For real training, run preprocess on your full dataset by editing this
+# file (or making a copy) to point ``annotation_file`` at your CSV and
+# ``payload_dir`` / ``lmdb_num_samples`` at the desired output size.
+# ============================================================================
+
+mode: preprocess
+
+# ===== preprocess (mode=preprocess) =====
+lmdb_num_samples: 32
+payload_dir: processed_data/example/train/example_stage1.payloads
+lmdb_map_size_gb: 32
+use_precomputed_audio: false
+
+# ===== Dataset =====
+# Empty dataset_dir means CSV paths are resolved relative to the project root.
+# processed_data/example/{train,val}/{video,audio}/ holds the bundled 32 train
+# + 12 val demo clips. The CSVs sit next to those subfolders.
+dataset_dir: ""
+annotation_file: processed_data/example/train_data.csv
+
+# ===== Validation feature preprocessing (optional) =====
+# Only used when preprocess_split=val (set on CLI). The script then iterates
+# val_annotation_file and writes per-sample features into <val_features_dir>/<sample_id>/.
+# context_null.pt (the n_prompt encoding) is dumped directly inside val_features_dir.
+val_annotation_file: processed_data/example/val_data.csv
+val_features_dir: processed_data/example/val/feature
+
+# ===== Data / run =====
+output_dir: outputs/flashtalk_stage1_preprocess_example
+use_fixed_reference_frame: false
+
+# ===== Preprocess-only filters =====
+# Toggle RVM+SSIM background-stability filtering during preprocess.
+# Set to true to drop samples with unstable backgrounds (useful when the dataset
+# contains many camera moves / scene cuts that hurt training).
+enable_background_filter: false
+# background_ssim_threshold is ONLY effective when enable_background_filter=true.
+# Samples whose minimum background SSIM (within the training window) is below this
+# threshold are dropped during preprocess.
+background_ssim_threshold: 0.96
+face_det_score_thresh: 0.97
+face_det_device: cuda
+
+# ===== Runtime =====
+gradient_checkpointing: true
+fsdp_cpu_offload: false
+debug: false

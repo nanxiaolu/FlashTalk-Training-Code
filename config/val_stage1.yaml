@@ -1,0 +1,48 @@
+# ============================================================================
+# Validation config for STAGE-1 trained weights.
+#
+# Driver script: train_flashtalk_stage2.py (not a typo) running with val_only=true.
+# We use train_flashtalk_stage2.py here because validation reuses the stage-2
+# inference path (CFG, denoising_step_list, motion injection, ...). When
+# init_stage1_full is set and val_only=true, only the generator is loaded with
+# the stage-1 safetensors and run through the stage-2 inference path.
+#
+# Output:
+#   <output_dir>/<run_timestamp>/val_step_0/videos/<sample_id>.mp4
+# ============================================================================
+
+val_only: true
+
+# Path to stage-1 full safetensors (e.g. outputs/flashtalk_stage1/.../checkpoint_700/model_700.safetensors).
+init_stage1_full: ""
+
+# ===== Inference / CFG =====
+val_frame_num: 33
+val_max_frame_num: 1000
+val_motion_frame: 5
+val_color_correction_strength: 1.0
+val_disable_cfg: false
+val_text_guide_scale: 3.0
+val_audio_guide_scale: 4.0
+# val_infer_steps: 40  # optional override; otherwise use denoising_step_list
+denoising_step_list: "1000,750,500,250"
+timestep_shift: 5.0
+use_inject_motion_frames: true
+
+# ===== Dataset =====
+# dataset_dir is left empty: provide it when validating on your own raw videos.
+dataset_dir: ""
+val_annotation_file: processed_data/talkcuts/val_data.csv
+val_features_dir: processed_data/talkcuts/val/feature
+
+# ===== Runtime =====
+output_dir: outputs/flashtalk_val_stage1
+debug: false
+use_fsdp: false
+auto_output_dir_name: false
+gradient_checkpointing: false
+fsdp_cpu_offload: false
+
+# ===== LMDB =====
+# val_only does not use LMDB; mode is set but its lmdb_path/payload_dir are not consumed.
+mode: train

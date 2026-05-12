@@ -1,0 +1,77 @@
+# ============================================================================
+# Stage-2 TRAIN config (full-parameter DMD self-forcing++).
+#
+# This file is dedicated to ``mode=train``: it consumes a packed LMDB
+# produced by the stage-2 preprocess pipeline. For preprocessing the bundled
+# 32-video minimum viable example, use ``config/preprocess_stage2_example.yaml``
+# (loaded by ``script/preprocess_stage2.sh``).
+# ============================================================================
+
+# ===== Optimization =====
+gen_grad_accum_steps: 4
+critic_grad_accum_steps: 4
+gen_betas: [0.9, 0.95]
+critic_betas: [0.9, 0.99]
+gen_lr: 2.0e-6
+critic_lr: 4.0e-7
+max_grad_norm: 10.0
+timestep_shift: 5.0
+
+max_steps: 120
+# Stage-2 uses two checkpoint cadences split by ``save_interval_switch_step``:
+#   step <  save_interval_switch_step => save every ``save_interval_first_stage`` steps
+#   step >= save_interval_switch_step => save every ``save_interval_second_stage`` steps
+# Early training is unstable and changes fast, so the first phase saves
+# sparsely; the second phase saves frequently because quality plateaus and
+# best-checkpoint picking happens within a narrow window.
+save_interval_first_stage: 50
+save_interval_switch_step: 100
+save_interval_second_stage: 20
+
+# ===== Stage-1 -> Stage-2 initialization =====
+# Path to stage-1 full safetensors. Used to initialize generator/real_score/fake_score.
+# Leave empty to skip stage-1 init (DMD will use base InfiniteTalk weights).
+init_stage1_full: ""
+fsdp_cpu_offload: true
+
+# ===== DMD =====
+dmd_loss_weight: 1.0
+temporal_align_weight: 1.0
+text_guide_scale: 3.0
+audio_guide_scale: 4.0
+keep_k_chunks: -1  # -1 means use all chunks
+denoising_step_list: "1000,750,500,250"
+use_inject_motion_frames: true
+
+# ===== Validation (not used during training; see config/val_stage2.yaml) =====
+val_disable_cfg: false
+val_text_guide_scale: 3.0
+val_audio_guide_scale: 4.0
+# val_infer_steps: 40
+
+# ===== Runtime =====
+debug: false
+save_generator_latent_videos_interval: 10
+
+# ===== LMDB =====
+# Points at the LMDB shipped on Baidu NetDisk and produced by running the
+# stage-2 preprocess + pack pipeline on the full TalkCuts training set. The
+# example LMDB generated from 32 demo videos lives at
+# ``processed_data/example/train/example_stage2.lmdb`` and is meant only as
+# a smoke test of the data pipeline.
+mode: train
+lmdb_path: processed_data/talkcuts/train/stage2_sample_6400.lmdb
+
+# ===== Dataset (only used by val_only=true) =====
+dataset_dir: ""
+annotation_file: processed_data/example/train_data.csv
+val_annotation_file: processed_data/talkcuts/val_data.csv
+# Directory of per-sample validation features (context.pt / clip_fea.pt / ...).
+# Produced by `script/preprocess_stage1.sh` with preprocess_split=val.
+# context_null.pt is expected directly inside this directory.
+val_features_dir: processed_data/talkcuts/val/feature
+
+# ===== Output =====
+output_dir: outputs/flashtalk_stage2
+
+val_only: false

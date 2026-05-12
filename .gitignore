@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+
+# Generated artefacts: keep the folder placeholders but ignore everything else.
+outputs/*
+!outputs/.gitkeep
+processed_data/*
+!processed_data/.gitkeep
+# `weights/` is shipped as an empty placeholder; locally it can be either
+# a real directory or a symlink to an existing weights tree. Either way, git
+# never tracks anything under it. The expected sub-directory layout is
+# documented in README.md and docs/baidu_assets.md.
+/weights
+/weights/*
+
+# Model weights (any leak-through binaries)
+*.safetensors
+*.pth
+*.pt
+*.model
+*.bin
+*.onnx
+
+# Media (training data is distributed via Baidu NetDisk, not git)
+*.mp4
+*.wav
+*.png
+*.jpg
+*.jpeg
+
+# IDE / scratch
+.vscode/
+.github/
+save_audio/
+cursor_md_file/
+
+# Temp
+tmp/
+*.lock

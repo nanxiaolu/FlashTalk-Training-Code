@@ -1,0 +1,65 @@
+# ----- Build / packaging glue -----
+# setuptools must stay < 81 because librosa 0.9.2 (and a few others) still rely
+# on the legacy `pkg_resources` API, which is removed in setuptools >= 81.
+setuptools<81
+
+# ----- Core ML stack -----
+numpy==1.26.4
+scipy==1.15.3
+
+# ----- Hugging Face stack -----
+transformers==4.50.0
+diffusers==0.35.1
+accelerate==1.10.1
+safetensors==0.6.2
+huggingface_hub==0.36.2
+
+# ----- Attention kernels (required by wan/) -----
+# Pinned to versions known to work with torch==2.4.1+cu121.
+xformers==0.0.28
+xfuser==0.4.4
+
+# ----- Quantization (used by wan/multitalk.py inference paths) -----
+optimum-quanto==0.2.6
+onnxruntime-gpu==1.19.0
+
+# ----- Video / image -----
+opencv-python==4.10.0.84
+opencv-python-headless==4.10.0.82
+imageio==2.37.0
+imageio-ffmpeg==0.6.0
+av==17.0.1
+decord==0.6.0
+moviepy==1.0.3
+Pillow==11.3.0
+scikit-image==0.25.2
+scenedetect==0.6.7.1
+
+# ----- Audio -----
+librosa==0.9.2
+pyloudnorm==0.1.1
+soundfile==0.11.0
+python_speech_features==0.6
+
+# ----- Face / matting / detection -----
+facexlib==0.3.0
+filterpy==1.4.5
+insightface==0.7.3
+
+# ----- Storage / data -----
+lmdb==1.7.5
+
+# ----- Utilities -----
+einops==0.8.1
+ftfy==6.3.1
+regex==2025.9.18
+tqdm==4.67.1
+loguru==0.7.3
+easydict==1.13
+requests==2.32.5
+packaging==25.0
+PyYAML==6.0.3
+tensorboard==2.20.0
+matplotlib==3.5.2
+pandas==2.3.3
+protobuf==6.33.1
