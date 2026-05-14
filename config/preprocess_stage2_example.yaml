@@ -16,28 +16,20 @@ mode: preprocess
 # ===== preprocess (mode=preprocess) =====
 lmdb_num_samples: 32
 payload_dir: processed_data/example/train/example_stage2.payloads
-lmdb_map_size_gb: 32
-use_precomputed_audio: false
 
 # ===== Stage-2 self-forcing++ chunking =====
-# Lower stage2_k_max (default 5) because the demo set is small — with 32
-# samples and k_max=5 the per-K quota is too tight and many short clips
-# would be skipped due to insufficient frame count.
-stage2_k_max: 2
-stage2_chunk_frames: 33
-stage2_chunk_overlap_frames: 5
+stage2_k_max: 5 # follow flashtalk
+stage2_chunk_frames: 33 # follow flashtalk
+stage2_chunk_overlap_frames: 5 # follow flashtalk
 
 # ===== Dataset =====
+# dataset_dir is ONLY used as the base directory for resolving relative paths
+# inside the CSV (annotation_file) and generating relative sample_ids.
+# It DOES NOT affect any output directories (like payload_dir or output_dir).
 # Empty dataset_dir means CSV paths are resolved relative to the project root.
 # processed_data/example/{train,val}/{video,audio}/ holds the bundled demo clips.
 dataset_dir: ""
 annotation_file: processed_data/example/train_data.csv
-val_annotation_file: processed_data/example/val_data.csv
-val_features_dir: processed_data/example/val/feature
 
 # ===== Output =====
 output_dir: outputs/flashtalk_stage2_preprocess_example
-
-# ===== Runtime =====
-debug: false
-val_only: false

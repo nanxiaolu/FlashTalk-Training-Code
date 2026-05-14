@@ -13,34 +13,27 @@
 val_only: true
 
 # Path to a stage-2 checkpoint directory containing
-#   generator_{step}.safetensors, training_state.pt, ...
+# e.g. outputs/flashtalk_stage2/.../checkpoint_100
 resume_from: ""
 
 # ===== Inference / CFG =====
 val_frame_num: 33
 val_max_frame_num: 1000
 val_motion_frame: 5
-val_color_correction_strength: 1.0
-val_disable_cfg: false
-val_text_guide_scale: 3.0
-val_audio_guide_scale: 4.0
-# val_infer_steps: 40  # optional override; otherwise use denoising_step_list
-denoising_step_list: "1000,750,500,250"
-timestep_shift: 5.0
+val_disable_cfg: true
 
 # ===== Dataset =====
+val_features_dir: processed_data/talkcuts/val/feature
+# dataset_dir is ONLY used as the base directory for resolving relative paths
+# inside the CSV (val_annotation_file) and generating relative sample_ids.
+# It DOES NOT affect where val_features_dir is read from, nor output_dir.
+# Empty dataset_dir means CSV paths are resolved relative to the project root.
 dataset_dir: ""
 val_annotation_file: processed_data/talkcuts/val_data.csv
-val_features_dir: processed_data/talkcuts/val/feature
 
 # ===== Runtime =====
 output_dir: outputs/flashtalk_val_stage2
 debug: false
 use_fsdp: false
 auto_output_dir_name: false
-gradient_checkpointing: false
-fsdp_cpu_offload: false
 
-# ===== LMDB =====
-# val_only does not use LMDB; mode is set but its lmdb_path/payload_dir are not consumed.
-mode: train

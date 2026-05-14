@@ -604,10 +604,6 @@ class DataProcessor:
         self.enable_background_filter = bool(getattr(config, "enable_background_filter", True))
         self.background_ssim_threshold = float(getattr(config, "background_ssim_threshold", 0.96))
         default_payload_dir = getattr(config, "payload_dir", None)
-        self.background_ssim_score_csv = getattr(config, "background_ssim_score_csv", None)
-        if self.background_ssim_score_csv is not None:
-            ssim_csv_path = str(self.background_ssim_score_csv).strip()
-            self.background_ssim_score_csv = ssim_csv_path if ssim_csv_path else None
 
         background_ssim_csv_path = getattr(config, "background_ssim_csv_path", None)
         if background_ssim_csv_path:
@@ -618,15 +614,11 @@ class DataProcessor:
             else:
                 csv_dir = os.path.join(str(PROJECT_ROOT), "processed_data")
             self.background_ssim_csv_path = os.path.join(csv_dir, "background_min_ssim_scores.csv")
-        self._background_ssim_score_map = None
-        self._background_ssim_score_map_loaded = False
         self.rvm_bg_blur_kernel = 3
         self.rvm_bg_keep_threshold = 0.99
         self._context_null_precomputed = None
         if self.enable_background_filter:
             logging.info("Background SSIM scores will be appended to: %s", self.background_ssim_csv_path)
-            if self.background_ssim_score_csv:
-                logging.info("Background SSIM lookup CSV: %s", self.background_ssim_score_csv)
 
         logging.info("Loading VAE...")
         vae_path = os.path.join(checkpoint_dir, config.vae_checkpoint) if hasattr(config, 'vae_checkpoint') else os.path.join(checkpoint_dir, "Wan2.1_VAE.pth")
@@ -804,65 +796,6 @@ class DataProcessor:
             finally:
                 fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
-    def _load_background_ssim_score_map(self):
-        if self._background_ssim_score_map_loaded:
-            return
-
-        self._background_ssim_score_map_loaded = True
-        self._background_ssim_score_map = {}
-        csv_path = self.background_ssim_score_csv
-        if not csv_path:
-            return
-        if not os.path.isfile(csv_path):
-            logging.warning(
-                "Background SSIM lookup CSV not found: %s. Fallback to real-time compute.",
-                csv_path,
-            )
-            return
-
-        loaded_rows = 0
-        with open(csv_path, "r", encoding="utf-8", newline="") as f:
-            reader = csv.DictReader(f)
-            if not reader.fieldnames:
-                logging.warning(
-                    "Background SSIM lookup CSV has no header: %s. Fallback to real-time compute.",
-                    csv_path,
-                )
-                return
-
-            key_col = "video_id" if "video_id" in reader.fieldnames else (
-                "sample_id" if "sample_id" in reader.fieldnames else None
-            )
-            score_col = "min_bg_ssim" if "min_bg_ssim" in reader.fieldnames else None
-            if key_col is None or score_col is None:
-                logging.warning(
-                    "Background SSIM lookup CSV missing required columns in %s (need video_id/sample_id and min_bg_ssim). "
-                    "Fallback to real-time compute.",
-                    csv_path,
-                )
-                return
-
-            for row in reader:
-                sample_id = str(row.get(key_col, "")).strip().replace("\\", "/")
-                if not sample_id:
-                    continue
-                score_text = row.get(score_col, "")
-                try:
-                    score = float(score_text)
-                except (TypeError, ValueError):
-                    continue
-                self._background_ssim_score_map[sample_id] = score
-                loaded_rows += 1
-
-        logging.info("Loaded %d background SSIM scores from %s", loaded_rows, csv_path)
-
-    def _get_background_ssim_from_csv(self, sample_id):
-        self._load_background_ssim_score_map()
-        if not self._background_ssim_score_map:
-            return None
-        normalized_id = str(sample_id).strip().replace("\\", "/")
-        return self._background_ssim_score_map.get(normalized_id)
-
     def process_batch(self, batch, return_unconditional=True, model_dtype=torch.bfloat16, unbind_for_model=False, processed_data_dir=None):
         """
         Process a batch of raw metadata into training tensors.
@@ -989,28 +922,23 @@ class DataProcessor:
 
             # Background stability filter runs after resize/crop to avoid huge resolutions.
             if self.enable_background_filter:
-                min_bg_ssim = None
-                if self.background_ssim_score_csv:
-                    min_bg_ssim = self._get_background_ssim_from_csv(sample_id)
-
-                if min_bg_ssim is None:
-                    try:
-                        frames_for_bg = (
-                            ((frames_tensor.permute(1, 2, 3, 0).detach().cpu().clamp(-1.0, 1.0) + 1.0) * 127.5)
-                            .round()
-                            .to(torch.uint8)
-                            .numpy()
-                        )
-                        min_bg_ssim = self._compute_window_background_min_ssim(frames_for_bg)
-                    except Exception as e:
-                        self._append_background_ssim_csv(sample_id, float("nan"))
-                        logging.warning(
-                            "Background SSIM check failed, skip sample_id=%s, error=%s",
-                            sample_id,
-                            e,
-                        )
-                        return None
-                    self._append_background_ssim_csv(sample_id, min_bg_ssim)
+                try:
+                    frames_for_bg = (
+                        ((frames_tensor.permute(1, 2, 3, 0).detach().cpu().clamp(-1.0, 1.0) + 1.0) * 127.5)
+                        .round()
+                        .to(torch.uint8)
+                        .numpy()
+                    )
+                    min_bg_ssim = self._compute_window_background_min_ssim(frames_for_bg)
+                except Exception as e:
+                    self._append_background_ssim_csv(sample_id, float("nan"))
+                    logging.warning(
+                        "Background SSIM check failed, skip sample_id=%s, error=%s",
+                        sample_id,
+                        e,
+                    )
+                    return None
+                self._append_background_ssim_csv(sample_id, min_bg_ssim)
                 if min_bg_ssim < float(self.background_ssim_threshold):
                     logging.info(
                         "Skip sample due to unstable background: sample_id=%s, min_bg_ssim=%.4f, threshold=%.2f",
@@ -1490,6 +1418,41 @@ def preprocess_batches_to_payload_files(
         dist.all_reduce(t, op=dist.ReduceOp.SUM)
         return int(t.item())
 
+    def _trim_payload_dir_to_target():
+        payload_records = []
+        for name in os.listdir(payload_dir):
+            m = re.fullmatch(r"(\d+)\.payload", name)
+            if m is None:
+                continue
+            payload_records.append((int(m.group(1)), os.path.join(payload_dir, name)))
+        payload_records.sort(key=lambda x: x[0])
+
+        total = len(payload_records)
+        if total == target:
+            logging.info("Payload preprocess trim: total=%d already equals target=%d", total, target)
+            return 0, total
+        if total < target:
+            logging.warning(
+                "Payload preprocess trim: total=%d < target=%d, nothing removed",
+                total,
+                target,
+            )
+            return 0, total
+
+        to_remove = payload_records[target:]
+        for _, p in to_remove:
+            if os.path.isfile(p):
+                os.remove(p)
+        removed = len(to_remove)
+        final_total = total - removed
+        logging.info(
+            "Payload preprocess trim: removed=%d (dropped tail keys), final_total=%d, target=%d",
+            removed,
+            final_total,
+            target,
+        )
+        return removed, final_total
+
     local_step = 0
     written = 0
     skipped = 0
@@ -1497,6 +1460,15 @@ def preprocess_batches_to_payload_files(
 
     initial_global_useful = _global_useful(0)
     if initial_global_useful >= target:
+        if rank == 0:
+            logging.info(
+                "Payload preprocess early-stop: initial_global_useful=%d >= target=%d, trimming to exact target.",
+                initial_global_useful,
+                target,
+            )
+        dist.barrier()
+        if rank == 0:
+            _trim_payload_dir_to_target()
         dist.barrier()
         return written, skipped, filtered
 
@@ -1551,6 +1523,9 @@ def preprocess_batches_to_payload_files(
             if global_useful >= target:
                 break
 
+    dist.barrier()
+    if rank == 0:
+        _trim_payload_dir_to_target()
     dist.barrier()
     return written, skipped, filtered
 

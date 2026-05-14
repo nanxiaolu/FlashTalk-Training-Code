@@ -15,27 +15,18 @@ mode: preprocess
 
 # ===== preprocess (mode=preprocess) =====
 lmdb_num_samples: 32
-payload_dir: processed_data/example/train/example_stage1.payloads
-lmdb_map_size_gb: 32
-use_precomputed_audio: false
+payload_dir: processed_data/example/train/example_stage1.payloads # output data
+output_dir: outputs/flashtalk_stage1_preprocess_example # output log
 
 # ===== Dataset =====
+# dataset_dir is ONLY used as the base directory for resolving relative paths
+# inside the CSV (annotation_file) and generating relative sample_ids.
+# It DOES NOT affect any output directories (like payload_dir or output_dir).
 # Empty dataset_dir means CSV paths are resolved relative to the project root.
 # processed_data/example/{train,val}/{video,audio}/ holds the bundled 32 train
 # + 12 val demo clips. The CSVs sit next to those subfolders.
 dataset_dir: ""
 annotation_file: processed_data/example/train_data.csv
-
-# ===== Validation feature preprocessing (optional) =====
-# Only used when preprocess_split=val (set on CLI). The script then iterates
-# val_annotation_file and writes per-sample features into <val_features_dir>/<sample_id>/.
-# context_null.pt (the n_prompt encoding) is dumped directly inside val_features_dir.
-val_annotation_file: processed_data/example/val_data.csv
-val_features_dir: processed_data/example/val/feature
-
-# ===== Data / run =====
-output_dir: outputs/flashtalk_stage1_preprocess_example
-use_fixed_reference_frame: false
 
 # ===== Preprocess-only filters =====
 # Toggle RVM+SSIM background-stability filtering during preprocess.
@@ -46,10 +37,3 @@ enable_background_filter: false
 # Samples whose minimum background SSIM (within the training window) is below this
 # threshold are dropped during preprocess.
 background_ssim_threshold: 0.96
-face_det_score_thresh: 0.97
-face_det_device: cuda
-
-# ===== Runtime =====
-gradient_checkpointing: true
-fsdp_cpu_offload: false
-debug: false

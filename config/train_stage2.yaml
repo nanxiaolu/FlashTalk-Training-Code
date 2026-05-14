@@ -15,9 +15,8 @@ critic_betas: [0.9, 0.99]
 gen_lr: 2.0e-6
 critic_lr: 4.0e-7
 max_grad_norm: 10.0
-timestep_shift: 5.0
 
-max_steps: 100
+max_steps: 100  # 100 iters for our dataset vs 200 iters in original FlashTalk
 # Stage-2 uses two checkpoint cadences split by ``save_interval_switch_step``:
 #   step <  save_interval_switch_step => save every ``save_interval_first_stage`` steps
 #   step >= save_interval_switch_step => save every ``save_interval_second_stage`` steps
@@ -39,14 +38,6 @@ dmd_loss_weight: 1.0
 temporal_align_weight: 1.0
 text_guide_scale: 3.0
 audio_guide_scale: 4.0
-keep_k_chunks: -1  # -1 means use all chunks
-denoising_step_list: "1000,750,500,250"
-
-# ===== Validation (not used during training; see config/val_stage2.yaml) =====
-val_disable_cfg: false
-val_text_guide_scale: 3.0
-val_audio_guide_scale: 4.0
-# val_infer_steps: 40
 
 # ===== Runtime =====
 debug: false
@@ -61,16 +52,8 @@ save_generator_latent_videos_interval: 10
 mode: train
 lmdb_path: processed_data/talkcuts/train/stage2_sample_6400.lmdb
 
-# ===== Dataset (only used by val_only=true) =====
-dataset_dir: ""
-annotation_file: processed_data/example/train_data.csv
-val_annotation_file: processed_data/talkcuts/val_data.csv
-# Directory of per-sample validation features (context.pt / clip_fea.pt / ...).
-# Produced by `script/preprocess_stage1.sh` with preprocess_split=val.
-# context_null.pt is expected directly inside this directory.
-val_features_dir: processed_data/talkcuts/val/feature
-
 # ===== Output =====
 output_dir: outputs/flashtalk_stage2
 
-val_only: false
+# ===== Resume (optional) =====
+# resume_from: outputs/flashtalk_stage1/.../checkpoint_xxx/

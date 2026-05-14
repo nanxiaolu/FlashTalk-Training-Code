@@ -1,28 +1,41 @@
-# 硬件配置与多卡扩展指南
+# 硬件扩展配置指南
 
-本项目的大规模模型训练（特别是 Stage 2 阶段）对显存和多卡的全局状态要求极高。如果您不使用默认的 **8× NVIDIA A800 (80 GB)** 配置进行训练，请务必详细阅读本指南。
+本仓库的默认配置基于 **8× A800 (80 GB)**。如果你要在 16/32/64 等其它卡数上跑，**必须**修改两类参数：
 
-## 硬件与显存要求底线
+1. **训练 YAML 里的梯度累积步数**：项目默认是 8卡 * 4 步梯度累积，batchsize=32，根据你的需要修改。
+2. **Stage 2 LMDB 的 `--group_size`**：由于 FSDP 的原因，不同GPU的样本的chunk数 K 必须一致，`group_size`就是lmdb里每group_size个样本的K一致。该值必须等于实际训练用的 GPU 数。如果你换了GPU数，group_size需要满足(group_size % GPU_num == 0)。可以在[pyloads->lmdb](script/pack_stage2.sh)时指定group_size，也可以在[lmdb->lmdb](tools/repack_stage2_lmdb_group_size.py)时转化group_size。
 
-* **内存 (RAM) 峰值**：大约需要 **1.6 TB**。内存峰值出现在 Stage 2 初始化阶段，因为需要同时加载并初始化三个 14B 参数的模型（生成器、教师分数模型、判别器分数模型）。
-* **降低内存峰值的技巧**：如果您的物理内存不足 1.6T，可以在代码中初始化并 copy 完模型后**提前使用 FSDP 包裹模型**，这样能够显著降低内存的峰值占用。
-* **显存 (VRAM) 占用**：
-  * **底线**：4 张 80G 显卡（如 A800/H800）**必定 OOM (Out of Memory)**。即使开启了 FSDP 的 CPU Offload 和 Gradient Checkpointing，依然无法在 4 张卡上跑通 Stage 2 的三网络训练。
-  * **正常训练显存占用**：在满足至少 8 张 80G 显卡的前提下，Stage 2 正常训练过程中的总显存占用大约为 **400GB+**。
+> Stage 1 不存在 K-grouping 问题。
 
-## 多卡数量扩展规则
+## 操作步骤
 
-Stage 2 使用了严格的全局 Batch Size 约束机制（为保持 FSDP 同步 K-grouping 的一致性）。改变 GPU 数量时，**必须**修改相关配置才能使程序正常运行。
+### Stage 1（只改 YAML）
 
-**关键参数调整表**：
+* 修改 `config/train_stage1.yaml` 中的 `grad_accum_steps` 。
+* 启动脚本 `script/train_stage1.sh` 里的 `--nproc_per_node` 改成实际卡数。
 
-| GPU 数量 | `grad_accum_steps` (Stage 1) | `gen_ / critic_grad_accum_steps` (Stage 2) | 打包 Stage 2 LMDB 时的 `--group_size` | 是否需要重新打包 Stage 2 LMDB? |
-|---|---|---|---|---|
-| **8** (默认) | 4 | 4 / 4 | 8 | 否 (使用我们提供的打包好的 LMDB 即可) |
-| **16** | 2 | 2 / 2 | 16 | 否 |
-| **32** | 1 | 1 / 1 | 32 | 否 |
-| **64** | 1 | 1 / 1 | 64 | **是** |
+### Stage 2（YAML + 更新 LMDB）
 
-**如何修改？**
-1. **修改训练配置文件**：在 `config/train_stageX.yaml` 中，调整 `grad_accum_steps` 以对应上述表格。
-2. **重打包 LMDB (仅针对 64 卡或需要时)**：如果是 64 卡等需要重打包的情况，必须在使用 `tools/payload_files_to_lmdb.py` 脚本时传入 `--group_size <您的GPU数量>`。详见 [避坑指南文档](tips.md) 中的 FSDP 限制说明。
+1. 修改 `config/train_stage2.yaml` 中的 `gen_grad_accum_steps` 与 `critic_grad_accum_steps`。
+2. 更新 LMDB
+可以在payload_dir -> LMDB时候指定group_size，或者将已有LMDB转化新的group_size
+payload_dir -> LMDB：
+   ```bash
+   python tools/payload_files_to_lmdb.py \
+       --payload_dir       processed_data/talkcuts/train/stage2_sample_6400.payloads \
+       --output_lmdb_path  processed_data/talkcuts/train/stage2_sample_6400_gs<N>.lmdb \
+       --shuffle_k_groups  true \
+       --group_size        <N>          # 与实际 GPU 数严格一致
+   ```
+
+LMDB -> LMDB:
+   ```bash
+    python tools/repack_stage2_lmdb_group_size.py \
+    --input_lmdb_path processed_data/talkcuts/train/stage2_sample_6400.lmdb \
+    --input_group_size 8 \
+    --output_group_size 32 \
+    --output_lmdb_path processed_data/talkcuts/train/stage2_sample_6400_gs32.lmdb
+   ```
+
+3. 把 `config/train_stage2.yaml` 的 `lmdb_path` 改成新 LMDB。
+4. `script/train_stage2.sh` 里的 `--nproc_per_node` 同步改成实际卡数。

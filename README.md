@@ -37,10 +37,10 @@
 
 ## 🛠️ 环境与资源准备 (Preparation)
 
-在开始任何训练或推理之前，请按顺序完成以下准备工作：
+在开始任何训练或推理之前，请**按顺序**完成以下准备工作：
 1. **[环境配置](docs/environment_preparation.md)**：Conda 环境构建、特定依赖库的安装。
-2. **[模型权重准备](docs/model_weights_preparation.md)**：所有必要的底层预训练模型、可选的用于评估的模型以及我们提供的训练 Checkpoints 汇总。
-3. **[数据准备](docs/data_preparation.md)**：下载训练和验证需要的特征，或准备处理自己的数据集。
+2. **[数据准备](docs/data_preparation.md)**：下载训练和验证需要的特征，或准备处理自己的数据集。
+3. **[模型权重准备](docs/model_weights_preparation.md)**：所有必要的底层预训练模型、可选的用于评估的模型以及我们提供的训练 Checkpoints 汇总。
 
 ## 🚀 训练流程全览 (Training Pipeline)
 

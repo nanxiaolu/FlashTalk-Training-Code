@@ -115,8 +115,6 @@ parser.add_argument("--lmdb_path", type=str, default="",
                    help="LMDB file path for stage-2 samples")
 parser.add_argument("--lmdb_num_samples", type=int, default=17600,
                    help="Number of samples to preprocess (global keys from 0)")
-parser.add_argument("--lmdb_map_size_gb", type=int, default=2048,
-                   help="LMDB max file size in GB for preprocess mode")
 parser.add_argument("--payload_dir", type=str, default=None,
                    help="Stage-A payload directory. Default: <lmdb_path without ext>")
 parser.add_argument("--stage2_chunk_frames", type=int, default=33,
@@ -144,7 +142,7 @@ parser.add_argument("--use_fsdp", type=str2bool, default=True, help="Use FSDP fo
 parser.add_argument("--mixed_precision", type=str2bool, default=True, help="Enable FSDP mixed precision")
 parser.add_argument("--sharding_strategy", type=str, default="full", choices=["full", "hybrid_full", "hybrid_zero2", "no_shard"], help="FSDP sharding strategy")
 parser.add_argument("--fsdp_wrap_strategy", type=str, default="size", choices=["size", "transformer"], help="FSDP auto wrap strategy")
-parser.add_argument("--fsdp_cpu_offload", type=str2bool, default=False, help="FSDP CPU offload")
+parser.add_argument("--fsdp_cpu_offload", type=str2bool, default=True, help="FSDP CPU offload")
 
 
 def _load_stage_config(config_path):

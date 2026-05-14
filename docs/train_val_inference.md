@@ -1,119 +1,142 @@
 # 训练、验证与推理指南
 
-本指南将按时间顺序带您走完整个数据预处理、模型训练、验证及最终的推理部署流程。所有脚本启动命令均默认使用 `torchrun --nproc_per_node=8 --standalone`。
+本指南覆盖 Stage 1 / Stage 2 的训练与验证，以及最终的推理部署。所有命令均默认使用 8 GPU。
 
-## 0. 数据提取与特征准备
+> **前置依赖**：开始之前请先完成：
+>
+> 1. [环境配置](environment_preparation.md)
+> 2. [数据准备](data_preparation.md)
+> 3. [模型权重准备](model_weights_preparation.md)
 
-在开始训练之前，需要将您的原始视频与音频数据处理成模型可读取的特征文件。
-
-> **提示**：我们随代码提供了 32 条短视频（位于 `processed_data/example/`）用于帮助您快速跑通整个预处理流程或进行格式调试。如果您想要复现最终的模型性能，**您必须使用我们提供的大规模 TalkCuts 提取特征数据集**，或者用本流程处理您自己足够多且质量高的数据。
-
-### Stage 1 预处理
-将视频和音频转换为 VAE 潜变量、CLIP/T5 文本特征以及音频特征。
-
-1. **配置**：复制并修改配置文件。
-   ```bash
-   cp config/preprocess_stage1_example.yaml config/preprocess_stage1.yaml
-   $EDITOR config/preprocess_stage1.yaml
-   ```
-2. **运行特征提取**：
-   ```bash
-   OMP_NUM_THREADS=1 torchrun --nproc_per_node=8 --standalone \
-     train_flashtalk_stage1.py --config config/preprocess_stage1.yaml
-   ```
-3. **打包 LMDB**：提取完成后，将所有 `.pt` 有效载荷文件打包成单个 LMDB，以加速训练时的读取。
-   ```bash
-   python tools/payload_files_to_lmdb.py \
-       --payload_dir processed_data/talkcuts/train/my_stage1.payloads \
-       --output_lmdb_path processed_data/talkcuts/train/my_stage1.lmdb \
-       --num_samples 25030 \
-       --shuffle_k_groups false
-   ```
-
-### Stage 2 预处理
-由于 Stage 2 使用分块自强制（Self-Forcing++），我们需要对数据进行重新切片，并分配特定的生成块长度（`selected_k`）。
-
-1. **配置**：复制并修改配置文件。
-   ```bash
-   cp config/preprocess_stage2_example.yaml config/preprocess_stage2.yaml
-   $EDITOR config/preprocess_stage2.yaml
-   ```
-2. **运行提取与重新切片**：
-   ```bash
-   OMP_NUM_THREADS=1 torchrun --nproc_per_node=8 --standalone \
-     train_flashtalk_stage2.py --config config/preprocess_stage2.yaml
-   ```
-3. **打包 LMDB (⚠️ 注意 GPU 数量绑定)**：
-   **极度重要**：这里打包时 `--group_size` 必须严格等于您将要用于 Stage 2 训练的 GPU 数量！
-   ```bash
-   python tools/payload_files_to_lmdb.py \
-       --payload_dir processed_data/talkcuts/train/my_stage2.payloads \
-       --output_lmdb_path processed_data/talkcuts/train/my_stage2.lmdb \
-       --num_samples 6400 \
-       --shuffle_k_groups true \
-       --group_size 8
-   ```
+> **多卡数量提醒**：默认配置基于 8 GPU。其它卡数请先阅读 [hardware_scaling.md](hardware_scaling.md)。
 
 ---
 
 ## 1. Stage 1 训练
 
-Stage 1 的目的是将基础模型分布从纯头部说话数据迁移到包含手势和身体运动的数据分布上。
+**目的**：让基础模型（InfiniteTalk）从纯头部说话数据**适配到包含手势、上半身运动的数据分布**。
 
-* **配置**：编辑 `config/train_stage1.yaml`，确认 `lmdb_path` 指向您的 Stage 1 训练集。
-* **运行**：
-  ```bash
-  bash script/train_stage1.sh
-  ```
-* 产物将保存在 `outputs/flashtalk_stage1/` 目录下。
+**配置文件**：`config/train_stage1.yaml`。  
+请修改 `config/train_stage1.yaml` 的 `lmdb_path` ，默认指向我们提供的预提取特征。
+
+> **注**：由于我们的数据集与官方不同，训练的迭代步数与FlashTalk论文里的不一致，这里采用 `max_steps` = 500 即可达到最优效果（原版 FlashTalk 论文中为 1000 iters）。
+
+**启动**：
+
+```bash
+bash script/train_stage1.sh
+```
+
+**产物**：保存在 `outputs/flashtalk_stage1/<run_name>/`，其中包含若干 `models_<step>.safetensors`（单文件），后面 Stage 2 通过 `init_stage1_full` 字段引用其中一份作为初始权重。
+
+---
 
 ## 2. Stage 1 验证
 
-> ⚠️ **重要提示**：Stage 1 验证是直接使用第一阶段的模型进行 **4 步推理**。由于该模型还未经过 Stage 2 蒸馏，生成的视频质量可能并不理想。这里的验证**仅用于快速参考模型是否发生训练崩溃**，并不代表最终效果。
+> ⚠️ **重要**：Stage 1 模型尚未经过 DMD 蒸馏，但出于工程便利我们直接用 Stage 2 的 4 步含 CFG 来验证它。**这一步的画质并不代表 Stage 1 真实能力**，仅用来快速判断模型是否训崩，**不能**作为最终效果对比依据。
 
-* **配置**：编辑 `config/val_stage1.yaml`，设置 `init_stage1_full` 为刚训练好的（或下载好的）Stage 1 safetensors 路径。
-* **运行**：
-  ```bash
-  bash script/val_stage1.sh
-  ```
+**配置文件**：`config/val_stage1.yaml`。运行前**必须**补充 `init_stage1_full` 参数，将其指向你上一步训出的 `generator_<step>.safetensors` 路径（也可以是我们提供的预训练 Stage 1 ckpt）。
+
+**注意**：在script/val_stage1.sh里运行的是 `train_flashtalk_stage2.py`，**这不是笔误**——val过程都用`train_flashtalk_stage2.py`脚本来执行。`config/val_stage1.yaml` 通过 `val_only` 字段告诉它"我只是想加载一个 Stage 1 权重做验证，别开始训练"。
+
+**启动**：
+
+```bash
+bash script/val_stage1.sh
+```
+
+**产物**：生成视频写到 `outputs/val_stage1/<run_name>/`。
+
+---
 
 ## 3. Stage 2 训练
 
-Stage 2 通过 DMD 蒸馏和自强制（Self-Forcing++）让模型能够在 4 步、无 CFG 下工作，且能从累积噪声中恢复。
+**目的**：在 Stage 1 模型基础上做 **DMD 蒸馏 + Self-Forcing++**，让模型具备三种能力：
 
-* **配置**：编辑 `config/train_stage2.yaml`，将 `init_stage1_full` 指向 Stage 1 生成的权重，并确认数据路径正确。
-* **运行**：
-  ```bash
-  bash script/train_stage2.sh
-  ```
+1. **4 步推理**：把原本 40 步的 Flow-Matching 推理压到 4 步；
+2. **CFG-free**：去掉分类器引导，单次前向即可；
+3. **噪声自纠正**：Self-Forcing++ 让学生模型在 rollout 自己的 motion latent 时学会从累积误差中恢复。
+
+**配置文件**：`config/train_stage2.yaml`。运行前需要确认/修改：
+
+- `init_stage1_full`：**必须补充**，指向 Stage 1 训练产出的 `generator_<step>.safetensors`（或我们提供的 Stage 1 ckpt）。
+- `lmdb_path`：默认指向大规模 TalkCuts 数据集 `processed_data/talkcuts/train/stage2_sample_6400.lmdb`。如果是跑示例，请修改为你提取的示例 LMDB；如果是自定义数据，请修改为你 pack 出来的 LMDB。
+- `gen_grad_accum_steps` / `critic_grad_accum_steps`：默认 4/4 对应 8 GPU (batchsize=32)。
+
+> **注**：同理，由于数据集差异，Stage 2 配置文件中的 `max_steps` 设为 100 即可（原版 FlashTalk 论文中为 200 iters）。
+
+**启动**：
+
+```bash
+bash script/train_stage2.sh
+```
+
+**产物**：保存在 `outputs/flashtalk_stage2/<run_name>/`，包含按训练阶段切换保存间隔的 `generator_<step>.safetensors`、`critic_100.safetensors` 等。最终推理只关心 `generator_*.safetensors`。
+
+---
 
 ## 4. Stage 2 验证
 
-对最终蒸馏好的模型进行全面的测试。它复用了 Stage 2 的真实推理路径（动作注入、特定降噪步数等）。验证代码不仅会生成视频，还会计算 "Sync-C", "Sync-D", "IQA", "Aesthe" 等评估指标。
+走真实推理路径：4 步、CFG-free、含动作注入、含 self-forcing chunked rollout。除生成视频外，验证脚本还会跑 **Sync-C / Sync-D / IQA / Aesthe** 四个客观指标（需要先下载评估模型，见 [model_weights_preparation.md](model_weights_preparation.md)）。
 
-* **配置**：编辑 `config/val_stage2.yaml`，设置 `resume_from` 为您的 Stage 2 checkpoint 目录。
-* **运行**：
-  ```bash
-  bash script/val_stage2.sh
-  ```
+**配置文件**：`config/val_stage2.yaml`。运行前**必须**补充 `resume_from` 参数，val 的是`resume_from` 参数指向的模型。需要将其指向 Stage 2 训练输出的 checkpoint 目录（脚本会自动从该目录加载 `generator_<step>.safetensors`）。
+
+**启动**：
+
+```bash
+bash script/val_stage2.sh
+```
+
+> val 后会自动运行eval，也可以单独运行run_evaluate_gt_standalone.py评估一个文件夹下所有视频，详细用法可以看run_evaluate_gt_standalone.py最开头的注释。
+
+**产物**：生成视频与逐样本/整体指标 JSON 写到 `outputs/val_stage2/<run_name>/`。
+
+---
 
 ## 5. 推理 (Inference)
 
-本仓库**仅包含训练与验证**代码。为了获得更好的推理速度及显存优化，实际的推理服务由原版 **[SoulX-FlashTalk 官方仓库](https://github.com/Soul-AILab/SoulX-FlashTalk)** 负责支持。由于官方推理代码对底层生成过程做了诸多优化，强烈建议在最终部署时使用。
+本仓库**只包含训练与验证代码**。生产推理（长视频、流式、显存优化等）由 **[SoulX-FlashTalk 官方仓库](https://github.com/Soul-AILab/SoulX-FlashTalk)** 维护，他们对推理做了一些工程优化，强烈建议部署时直接用他们的代码。
 
-**导出权重并推理的步骤**：
+### 5.1 模型格式转换
 
-1. **转换格式**：使用本项目提供的脚本，将保存的单文件 safetensors 转换为 Diffusers 分片格式。
-   ```bash
-   python tools/export_stage2_model_to_flashtalk_style.py \
-       --src outputs/flashtalk_stage2/.../generator_xxx.safetensors \
-       --output_dir <FlashTalk克隆目录>/models/SoulX-FlashTalk-14B \
-       --num_shards 4
-   ```
-2. **克隆推理仓库并运行**：
-   ```bash
-   git clone https://github.com/Soul-AILab/SoulX-FlashTalk.git
-   cd SoulX-FlashTalk
-   # 按照其 README 安装依赖后执行推理
-   bash inference_script_multi_gpu.sh
-   ```
+我们训练保存的是单文件 `generator_<step>.safetensors`（全部参数挤在一个 file 里），而 SoulX-FlashTalk 推理代码要求 HuggingFace Diffusers 的分片 safetensors 格式。提供了一个转换工具：
+
+```bash
+python tools/export_stage2_model_to_flashtalk_style.py \
+    --src         outputs/flashtalk_stage2/<run_name>/generator_<step>.safetensors \
+    --output_dir  <SoulX-FlashTalk 克隆目录>/models/SoulX-FlashTalk-14B \
+    --num_shards  4
+```
+
+产出物：
+
+```
+<output_dir>/
+├── diffusion_pytorch_model-00001-of-00004.safetensors
+├── diffusion_pytorch_model-00002-of-00004.safetensors
+├── diffusion_pytorch_model-00003-of-00004.safetensors
+├── diffusion_pytorch_model-00004-of-00004.safetensors
+└── diffusion_pytorch_model.safetensors.index.json
+```
+
+把这些文件**覆盖**到 SoulX-FlashTalk 的对应模型目录即可（除上述文件外，其它配置文件保持不变），如下图所示：
+
+> ```text
+> FlashTalk/
+> ├── ...other file...                                          # 保留
+> ├── config.json                                               # 保留
+> ├── configuration.json                                        # 保留
+> ├── diffusion_pytorch_model-00001-of-00004.safetensors        # <- 替换
+> ├── diffusion_pytorch_model-00002-of-00004.safetensors        # <- 替换
+> ├── diffusion_pytorch_model-00003-of-00004.safetensors        # <- 替换
+> ├── diffusion_pytorch_model-00004-of-00004.safetensors        # <- 替换
+> ├── diffusion_pytorch_model.safetensors.index.json            # <- 替换
+> ├── LICENSE.txt                                               # 保留
+> ├── models_clip_open-clip-xlm-roberta-large-vit-huge-14.pth   # 保留
+> └── ...other file...                                          # 保留
+> ```
+
+### 5.2 用 SoulX-FlashTalk 推理
+
+> ⚠️ 注：本项目的环境无法兼容FlashTalk的torch.compile加速，请按照[SoulX-FlashTalk 官方仓库](https://github.com/Soul-AILab/SoulX-FlashTalk)指示重新配置环境并推理。
+

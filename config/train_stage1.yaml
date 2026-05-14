@@ -25,10 +25,9 @@ annotation_file: processed_data/example/train_data.csv
 
 # ===== Data / run =====
 output_dir: outputs/flashtalk_stage1
-use_fixed_reference_frame: false
 
 # ===== Optimization =====
-max_steps: 500
+max_steps: 500  # 500 iters for our dataset vs 1000 iters in original FlashTalk
 save_interval: 100
 warmup_steps: 0
 gen_lr: 2.0e-6
@@ -43,7 +42,6 @@ betas: (0.9, 0.99)
 flow_match_weight: 0.75
 face_loss_weight: 0.75
 temporal_loss_weight: 0.25
-face_loss_type: l2
 
 # ===== Runtime =====
 save_generator_latent_videos_interval: 50

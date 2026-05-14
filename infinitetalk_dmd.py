@@ -89,8 +89,8 @@ class InfiniteTalkDMD(nn.Module):
         self.infinitetalk_dir = infinitetalk_dir
 
         # DMD hyper-parameters
-        self.text_guide_scale = getattr(config, 'text_guide_scale', 5.0)
-        self.audio_guide_scale = getattr(config, 'audio_guide_scale', 4.0)
+        self.text_guide_scale = getattr(config, 'text_guide_scale', 4.0)
+        self.audio_guide_scale = getattr(config, 'audio_guide_scale', 3.0)
         self.num_train_timestep = 1000
         self.min_step = int(0.02 * self.num_train_timestep)
         self.max_step = int(0.98 * self.num_train_timestep)

@@ -103,8 +103,6 @@ parser.add_argument("--lmdb_path", type=str, default="",
                    help="LMDB file path for preprocessed batches")
 parser.add_argument("--lmdb_num_samples", type=int, default=35000,
                    help="Number of samples to preprocess into LMDB (global, keys start from 0)")
-parser.add_argument("--lmdb_map_size_gb", type=int, default=2048,
-                   help="LMDB max file size in GB for preprocess mode")
 parser.add_argument("--payload_dir", type=str, default=None,
                    help="Stage-A payload directory for preprocess mode. Default: <lmdb_path without ext>.payloads")
 
