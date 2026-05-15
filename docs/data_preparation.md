@@ -1,8 +1,13 @@
 # 数据准备
 
+最终需要的有3个数据：
+1）第一阶段训练所需特征 (.lmdb)
+2）第二阶段训练所需特征 (.lmdb)
+3）第一第二阶段共用的val特征 (Folder)
+
 本仓库的数据准备共有两条可选路径：
 
-- **路径 A：直接使用我们提供的特征**。如果你只想复现训练或快速验证模型，可以跳过预处理，直接下载 TalkCuts 的预提取特征（两阶段约 30k 训练样本 + 12 条验证集）并解压使用。
+- **路径 A：直接使用我们提供的特征**。如果你只想复现训练或快速验证模型，可以跳过预处理，直接下载我们预先处理好的 TalkCuts 的预提取特征（两阶段约 30k 训练样本 + 12 条验证集）并解压使用。
 - **路径 B：处理自己的数据**。如果想在自有数据集上做适应性微调，需要走完整的 `preprocess → pack → train` 流程；本仓库附带 32 条示例视频用于跑通整个流水线。
 
 强烈建议先用我们的数据跑通后，再尝试在自己的数据上运行。
@@ -19,7 +24,7 @@ raw mp4/wav   │        preprocess         │ payloads │        pack        
 ```
 
 - 将raw video/audio处理为 `.payload` 文件，存放该样本的 VAE latent、CLIP / T5 文本特征、wav2vec 音频特征、face mask、运动元信息、以及 Stage 2 的 `selected_k`。位于 `<payload_dir>/<key>.payload`。
-- 将所有payload文件pack为单个lmdb文件，提高数据读取速度。
+- 将所有payload文件pack为单个lmdb文件，提高数据读取速度，之后就可以用于训练。
 
 数据路径可以在配置文件自行修改，默认放在仓库根目录的 `processed_data/` 下，结构如下：
 
@@ -73,7 +78,7 @@ processed_data/
 
 ### 3.1 用 32 条示例数据跑通整套流程
 
-提前准备了32条原始视频➕音频作为最小可运行示例供大家跑通处理数据过程[百度网盘](https://pan.baidu.com/s/1GBubHORr7Zb9o09_pMwGHg?pwd=1983)，解压放到 `processed_data/example`。
+提前准备了[32条原始视频➕音频](https://pan.baidu.com/s/1GBubHORr7Zb9o09_pMwGHg?pwd=1983)作为最小可运行示例供大家跑通处理数据过程，解压放到 `processed_data/example`。
 
 ```bash
 # Stage 1：预处理 + 打包
@@ -83,9 +88,12 @@ bash script/pack_stage1.sh
 # Stage 2：预处理 + 打包（同样的 32 条片段重新切片）
 bash script/preprocess_stage2.sh
 bash script/pack_stage2.sh
+
+# 验证集：预处理
+bash script/preprocess_val.sh
 ```
 
-上述程序跑通约 5 分钟（绝大部分时间花在模型初始化，32 条样本本身很快）。输出会写到 `processed_data/example/train/example_stage{1,2}.{payloads,lmdb}`。
+上述样例程序可在10分钟以内全部跑完（绝大部分时间花在模型初始化）。验证集特征输出会写到 `processed_data/example/val/feature`，训练集输出会写到 `processed_data/example/train/example_stage{1,2}.{payloads,lmdb}`。
 
 > ⚠️ 这只是可执行测试用的数据，**远不足以训练出可用模型**。要复现性能，请走路径 A 或扩展到自己的大规模数据集。
 
@@ -163,9 +171,6 @@ OMP_NUM_THREADS=1 torchrun --nproc_per_node=8 --standalone \
   train_flashtalk_stage2.py --config config/preprocess_stage2.yaml
 ```
 
-同步逻辑与 Stage 1 一致；日志中会打印各 K 桶的目标分布，例如：
-`Stage2 K counts target snapshot: {1: 1280, 2: 1280, 3: 1280, 4: 1280, 5: 1280}`（`K_max=5`、`num_samples=6400` 时）。
-
 #### 3.5 打包 Stage 2 LMDB（**注意 GPU 数量绑定**）
 
 ```bash
@@ -177,7 +182,7 @@ python tools/payload_files_to_lmdb.py \
 ```
 
 - `--shuffle_k_groups true`：true时程序执行stage2时的lmdb打包。
-- `--group_size 8`：**必须等于你打算训练用的 GPU 数量，或者group_size % GPU_num == 0**。因为FSDP要求多GPU时不同rank的前向传播次数需要一致，否则程序会卡住，所以这里需要限制所有rank的样本的chunk数K一致。后续如果调整 GPU 数，必须重打包。
+- `--group_size 8`：8 GPU时的配置，其他GPU数请看[hardware_scaling](docs/hardware_scaling.md)
 
 ---
 
