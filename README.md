@@ -60,7 +60,7 @@
 
 [StableAvatar](https://github.com/Francis-Rings/StableAvatar): Stage1训练过程参考他们部分数据处理和loss设计.
 
-[DMD2](https://github.com/tianweiy/DMD2/tree/main?tab=readme-ov-file), [CausVid](https://github.com/tianweiy/CausVid),[Self-Forcing](https://github.com/guandeh17/Self-Forcing) ，[Self-Forcing-Plus](https://github.com/GoatWu/Self-Forcing-Plus) and [Self forcing++](https://arxiv.org/abs/2510.02283): 参考他们DMD训练的代码与技术
+[DMD2](https://github.com/tianweiy/DMD2/tree/main?tab=readme-ov-file), [CausVid](https://github.com/tianweiy/CausVid),[Self-Forcing](https://github.com/guandeh17/Self-Forcing) ，[Self-Forcing-Plus](https://github.com/GoatWu/Self-Forcing-Plus): 参考他们DMD训练的代码与技术
 
 ## 📜 License
 The models in this repository are licensed under the Apache 2.0 License. We claim no rights over the your generated contents, 
