@@ -1,17 +1,19 @@
-<h1 align="center">FlashTalk 训练代码</h1>
+# FlashTalk Training Code
 
-> **非官方实现。** 本仓库是在 [InfiniteTalk](https://github.com/MeiGen-AI/InfiniteTalk) 基础模型之上对 [FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/) 训练方案的独立复现。它未经 [FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/) 或 [InfiniteTalk](https://github.com/MeiGen-AI/InfiniteTalk) 原作者的审查或认可。超参数、消融实验和工程选择可能与官方发布有所不同（详见 **[Tips: 与官方 FlashTalk 实现的核心差异及原因](docs/tips.md#一-与官方-flashtalk-实现的核心差异及原因)**）。
+[Chinese version](README-zh-CN.md)
 
-[FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/) 是一个能够 Real-Time 生成无限长度的语音驱动数字人模型，它将原本需要 40 步、依赖 CFG（分类器引导）的 InfiniteTalk 压缩为 **4 步、无 CFG** 的 Self-Correcting 模型，同时在包含手部的半身数据上保持较好的性能。本仓库包含了完整的训练代码。
+> **Unofficial implementation.** This repository is an independent reproduction of the [FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/) training recipe built on top of the [InfiniteTalk](https://github.com/MeiGen-AI/InfiniteTalk) base model. It has not been reviewed or endorsed by the original authors of [FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/) or [InfiniteTalk](https://github.com/MeiGen-AI/InfiniteTalk). Hyperparameters, ablations, and engineering choices may differ from the official release. See **[Tips: key differences from the official FlashTalk implementation](docs/tips.md#1-key-differences-from-the-official-flashtalk-implementation)** for details.
 
-## 🌟 核心亮点 (Key Features)
+[FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/) is a speech-driven digital human model that can generate real-time videos of unlimited length. It compresses InfiniteTalk from a 40-step, CFG-based model into a **4-step, CFG-free** self-correcting model while preserving strong performance on half-body data with hand motion. This repository provides the full training code.
 
-* **完整的训练流水线**：提供 Stage 1（全参数适应性微调）和 Stage 2（引入 Self-Forcing++ 和 DMD 蒸馏）的完整训练代码。
-* **全流程数据支持**：提供 30k 提取好特征的 TalkCuts 样本作为训练集，12 个样本作为验证集。额外提供 32 条未处理短视频作为toy example用于帮助用户快速跑通数据处理流程，方便用到处理自己的数据集。
-* **预训练权重开源**：我们公开了通过此流程训练得出的 Stage 1 和 Stage 2 完整模型权重。用户可直接下载用于推理测试、验证对比或作为自身数据的微调起点。
-* **全面的评估验证**：包含验证模型及 "Sync-C", "Sync-D", "IQA", "Aesthe" 等评估指标的代码。
+## 🌟 Key Features
 
-以下是FlashTalk 官方开源模型（左）与 我们复现的模型（右）在近似输入条件下的效果对比。复现模型完全基于我们提供的开源训练数据特征训练得出。
+- **Complete training pipeline**: Stage 1 full-parameter fine-tuning and Stage 2 training with Self-Forcing++ and DMD distillation.
+- **End-to-end data support**: around 30k pre-extracted TalkCuts training samples and 12 validation samples are provided. We also include 32 raw short videos as toy examples so users can quickly run through the preprocessing pipeline and adapt it to your own datasets.
+- **Open pretrained weights**: we release the Stage 1 and Stage 2 model weights trained with this pipeline. They can be used for inference tests, validation comparisons, or as fine-tuning starting points for custom data.
+- **Evaluation support**: validation and metric code for "Sync-C", "Sync-D", "IQA", "Aesthe", and related checks.
+
+The comparison below shows the official FlashTalk open model on the left and our reproduced model on the right under similar input conditions. Our reproduced model is trained entirely from the open training-data features provided in this repository.
 
   <table align="center">
     <tr>
@@ -28,42 +30,50 @@
     </tr>
   </table>
 
-## 💻 硬件要求 (Hardware Requirements)
+## 💻 Hardware Requirements
 
-本仓库的默认训练配置基于 **8× NVIDIA A800 (80 GB)**。
-* **显存底线**：4 张 80G 显卡（如 A800/H800）会 OOM，8 * 80G是最低要求。当前项目的参数按照 8 GPU 配置。
-* **不同卡数扩展**：如果您使用 16、32、64 等其他显卡数量，请参考 **[硬件扩展配置指南](docs/hardware_scaling.md)** 修改对应参数。
-* **内存 (RAM) 峰值**：大约需要 **1.6 TB**。内存峰值出现在 Stage 2 同时初始化三个 14B 参数的模型。
+The default training configuration targets **8 x NVIDIA A800 (80 GB)**.
 
-## 🛠️ 环境与资源准备 (Preparation)
+- **Minimum GPU memory**: 4 x 80 GB GPUs such as A800/H800 will run out of memory. 8 x 80 GB is the minimum supported setup for the default configuration.
+- **Scaling to other GPU counts**: if you use 16, 32, 64, or another number of GPUs, see the **[hardware scaling guide](docs/hardware_scaling.md)** and update the corresponding parameters.
+- **Peak RAM usage**: about **1.6 TB**. The peak occurs in Stage 2, where three 14B-parameter models are initialized at the same time.
 
-在开始任何训练或推理之前，请**按顺序**完成以下准备工作：
-1. **[环境配置](docs/environment_preparation.md)**：Conda 环境构建、特定依赖库的安装。
-2. **[数据准备](docs/data_preparation.md)**：下载训练和验证需要的特征，或准备处理自己的数据集。
-3. **[模型权重准备](docs/model_weights_preparation.md)**：所有必要或可选的底层预训练模型以及我们提供的训练 Checkpoints 汇总。
+## 🛠️ Preparation
 
-## 🚀 训练流程全览 (Training Pipeline)
+Before running any training or inference workflow, complete the following steps **in order**:
 
-整个训练管线分为以下阶段，所有步骤详细的运行命令及配置方法请参考 **[训练、验证与推理指南](docs/train_val_inference.md)**。
-> **💡 提示**：为了方便大家对比最终训练效果和快速体验，我们开放了已提取好的大规模数据特征和每个阶段结束后的 Checkpoints 权重。如果您的目标是复现模型性能，您可以灵活利用这些产物跳过某些耗时的训练步骤。
+1. **[Environment preparation](docs/environment_preparation.md)**: create the Conda environment and install required dependencies.
+2. **[Data preparation](docs/data_preparation.md)**: download the training/validation features or preprocess your own dataset.
+3. **[Model weights preparation](docs/model_weights_preparation.md)**: download required or optional base models and the checkpoints we provide.
 
-## ⚠️ 避坑指南 (Important Tips)
+## 🚀 Training Pipeline
 
-我们在开发和训练中遇到了许多隐藏的陷阱，为避免您浪费大量时间排查错误，在开始大规模运行之前，**强烈建议**您阅读：**[Tips](docs/tips.md)**
+The training pipeline is divided into multiple stages. For detailed commands and configuration instructions, see the **[training, validation, and inference guide](docs/train_val_inference.md)**.
+
+> **💡 Tip**: To make final-quality comparison and quick experiments easier, we release pre-extracted large-scale data features and checkpoints from the end of each stage. If your goal is to reproduce model performance, you can use these artifacts to skip some time-consuming training steps.
+
+## ⚠️ Important Tips
+
+We encountered many hidden pitfalls during development and training. Before starting large-scale runs, we strongly recommend reading **[Tips](docs/tips.md)** to avoid spending a lot of time debugging known issues.
 
 ## 🙇 Acknowledgement
-[FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/): 这个项目复现的论文。
 
-[InfiniteTalk](https://github.com/MeiGen-AI/InfiniteTalk) and [Wan](https://github.com/Wan-Video/Wan2.1): the base model we built upon.
+[FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/): the paper reproduced by this project.
 
-[Self forcing++](https://github.com/justincui03/Self-Forcing-Plus-Plus): FlashTalk使用的 key distillation technique.
+[InfiniteTalk](https://github.com/MeiGen-AI/InfiniteTalk) and [Wan](https://github.com/Wan-Video/Wan2.1): the base models we build upon.
 
-[StableAvatar](https://github.com/Francis-Rings/StableAvatar): Stage1训练过程参考他们部分数据处理和loss设计.
+[Self forcing++](https://github.com/justincui03/Self-Forcing-Plus-Plus): the key distillation technique used by FlashTalk.
 
-[DMD2](https://github.com/tianweiy/DMD2), [CausVid](https://github.com/tianweiy/CausVid)，[Self-Forcing](https://github.com/guandeh17/Self-Forcing) ，[Self-Forcing-Plus](https://github.com/GoatWu/Self-Forcing-Plus): 参考他们DMD训练的代码
+[StableAvatar](https://github.com/Francis-Rings/StableAvatar): part of our Stage 1 data processing and loss design references their work.
+
+[DMD2](https://github.com/tianweiy/DMD2), [CausVid](https://github.com/tianweiy/CausVid), [Self-Forcing](https://github.com/guandeh17/Self-Forcing), and [Self-Forcing-Plus](https://github.com/GoatWu/Self-Forcing-Plus): our DMD training code references these projects.
 
 ## 📜 License
-The models in this repository are licensed under the Apache 2.0 License. We claim no rights over the your generated contents, 
+
+The models in this repository are licensed under the Apache 2.0 License. We claim no rights over your generated contents, 
 granting you the freedom to use them while ensuring that your usage complies with the provisions of this license. 
-You are fully accountable for your use of the models, which must not involve sharing any content that violates applicable laws, 
-causes harm to individuals or groups, disseminates personal information intended for harm, spreads misinformation, or targets vulnerable populations. 
+You are fully accountable for your use of the models, which must not involve sharing any content that violates applicable laws, causes harm to individuals or groups, disseminates personal information intended for harm, spreads misinformation, or targets vulnerable populations. 
+
+## Contact
+
+If you have any questions, feel free to open an issue. I will reply within 24 hours.

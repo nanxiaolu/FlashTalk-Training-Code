@@ -1,69 +1,72 @@
-# 避坑指南与常见问题 (Tips)
+# Tips and Common Pitfalls
 
-本文档汇总了我们在复现 FlashTalk 及其训练过程中遇到的各种问题和踩坑经验。包括**本仓库具体实现与 FlashTalk 官方论文实现的细节差异**，并解释了为什么要做出这些改动。此外，我们也总结了关于**训练参数设置**的最佳实践，希望对您有帮助。
+[Chinese version](tips-zh-CN.md)
 
----
-
-## 一、 与官方 FlashTalk 实现的核心差异及原因
-
-我们在复现过程中发现，完全按照原论文的细节进行实现会遇到一系列严重的生成质量问题。为了实现稳定、高质量的无限长视频生成，我们引入了以下关键修改：
-
-### 1. 解决生成长视频时窗口拼接处的画面跳变
-
-**问题描述**：在 Stage 2 生成长视频时，每两个窗口的交界边界处会出现明显的画面不连贯和跳变现象。
-
-**改进方法**：**不对教师模型的motion latent加噪声**。如果对教师模型的motion latent加噪声，经过教师模型去噪后motion latent与学生模型的motion latent差异较大，此时教师模型的real score与学生模型的motion latent拼接时不够平滑，学习后就导致了在窗口拼接处的突变。将送给教师的 motion latent 的噪声去除后，跳变问题彻底解决。
-
-### 2. 解决镜头沿单向持续偏移的问题
-
-**问题描述**：经过 DMD 蒸馏后的 Stage 2 模型在生成视频时，镜头会无法控制地向一个方向持续漂移（而 Stage 1 模型却没有这个问题）。  
-
-**改进方法**：**约束学生与教师的 Motion Latent 对齐**。尽管官方论文在Figure3的消融实验声称motion latent不需要对齐，但我们发现这会导致学生的 motion latent 几乎完全不受约束，偏移噪声会在自回归的时序展开中被不断放大，并被时序一致性继承到下一个窗口。我们**显式增加了学生对齐教师的约束**，使得生成的数分钟视频镜头保持稳定，肉眼看不出晃动。
-
-### 3. 解决分钟级长视频背景细节不一致的问题
-
-**问题描述**：在少数Out of Distribution的数据生成几分钟视频时，背景的细节纹理可能会发生轻微的变化。
-
-**原因与改动**：为了进一步稳定背景细节，支撑真正的“无限长度生成”，我们在 DMD 训练阶段**引入了一个专属的时序 Loss** 来约束一致性。
-
-- **正确做法**：用人像分割模型得到每一帧的背景区域，并且适当扩展人像轮廓区域以保证完全是背景区域。在视频序列首尾各**拼接上参考帧作为锚点**，将**相邻两帧背景区域的差值**进行约束（实现参考：`_compute_rvm_background_overlap_mse` in `flashtalk_dmd.py`）。这样既保证了背景纹理与参考帧严格一致，又完美保留了帧间的时序平滑过渡。
-- **错误做法避坑**：实验表明，绝不能直接把生成的每一帧的背景直接对齐参考帧背景，这会彻底破坏时序连续性，导致画面剧烈抖动。
+This document summarizes the main issues we encountered while reproducing FlashTalk and building its training pipeline. It covers **implementation differences between this repository and the official FlashTalk paper**, explains why those changes were made, and records several practical recommendations for training configuration.
 
 ---
 
-## 二、 训练配置与调参最佳实践
+## 1. Key differences from the official FlashTalk implementation
 
-除了算法架构上的改动，我们在实际训练调参时也得出了一些非常重要的经验结论：
+During reproduction, we found that following the paper details literally led to several serious generation-quality issues. To achieve stable, high-quality long-form video generation, we introduced the following changes.
 
-### 1. 引入数据集背景静止过滤（必要）
+### 1.1 Fixing visual jumps at long-video window boundaries
 
-- **问题**：如果生成的视频镜头一直晃动，有可能是原始训练视频的背景本身就在晃动。
-- **做法**：为了保证训练数据背景稳定，我们使用 RVM 进行前景/背景分割，计算背景 SSIM > 0.96 才视为“静止背景”并保留。我们通过 `enable_background_filter` 开关将这一过滤操作暴露在 Stage 1 的数据预处理中。
-- **效果**：剔除背景晃动样本后重新训练 Stage 1 和 Stage 2，画面稳定性显著提升。
+**Problem**: When Stage 2 generates long videos, obvious discontinuities and jumps can appear at the boundary between adjacent windows.
 
-### 2. 参考帧选取策略（采纳 InfiniteTalk 做法，必要）
+**Improvement**: **Do not add noise to the teacher model's motion latent**. If the teacher motion latent is noised, the denoised teacher motion latent can differ too much from the student motion latent. The teacher real score then does not splice smoothly with the student motion latent, and training transfers this discontinuity to window boundaries. Removing noise from the motion latent sent to the teacher resolves this issue.
 
-- **问题**：最初我们模仿推理阶段，使用视频首帧作为参考帧。但由于训练时的 motion latent 也是首帧且无噪声，导致参考帧的作用很快被“遮蔽”，画面无法被参考帧“拽住”，从而引发画面稳定性问题。
-- **做法**：最后我们采纳了 **InfiniteTalk** 的做法：**改为从当前窗口的相邻窗口中随机任选一帧作为参考帧**。
-- **效果**：极大地改善了生成视频画面的稳定性。
+### 1.2 Preventing persistent one-direction camera drift
 
-### 3. 放弃 LoRA，必须使用全参微调
+**Problem**: After DMD distillation, the Stage 2 model may generate videos where the camera drifts continuously in one direction, even though the Stage 1 model does not show this behavior.
 
-- **问题**：我们在很长一段时间内尝试使用 LoRA 训练。发现在当前的迭代步数下（第一阶段 1000 步，第二阶段 200 步），调小学习率几乎没有效果，调大学习率反而会让模型越训越差。
-- **原因**：LoRA 想要达到好效果通常需要极长的迭代周期（例如 LiveAvatar 训了 27.5k 步，Batch Size 128）。而我们的目标是在大数据集上用 1k + 200 步快速收敛，LoRA 在这种场景和步数限制下几乎无效。
-- **结论**：**这种场景必须进行全参数微调**。本仓库目前的默认配置（Stage 1 和 Stage 2）均已全部设定为全参微调。
+**Improvement**: **Constrain the student's motion latent to align with the teacher's motion latent**. Although the ablation in Figure 3 of the official paper claims that motion-latent alignment is unnecessary, we found that without it the student's motion latent is almost unconstrained. Drift noise can be amplified during autoregressive rollout and inherited by the next window through temporal consistency. We explicitly add a student-teacher motion-latent alignment constraint, which keeps multi-minute generated videos visually stable.
 
-### 4. 小数据集（如单人微调）只需极少步数
+### 1.3 Improving background detail consistency in minute-long videos
 
-- **经验**：如果你想在单人小数据集（约500条视频）上进行微调，**最好是基于我们在大规模数据集上预训练好的模型进行继续训练，并且只需跑极少的步数**。直接在小数据集上训练效果很差。
-- **建议**：例如 Stage 1 和 Stage 2 都只需要多训练 **10 个 Iterations**（相当于多训练 `(10 + 10 // 5) * batchsize` 个样本）就能达到很好的效果。千万不要贪多，**训练过多的步数往往会导致模型效果变得更差**。
+**Problem**: For a small number of out-of-distribution samples, the background texture may change slightly when generating videos lasting several minutes.
 
-### 5. 单个 GPU 上的 Batch Size 
+**Reason and change**: To further stabilize background details and support truly "infinite" generation, we add a dedicated temporal loss during DMD training.
 
-- **注意**：目前我们在训练中 `per-GPU-batchsize` 始终只测试过使用 **1**。
-- **建议**：暂不知道调大该参数是否会引发未知问题或影响收敛，如果您尝试调大，请密切关注训练情况。
+- **Recommended approach**: Use a portrait matting model to extract the background region for every frame, and expand the portrait contour slightly to ensure the selected region is pure background. Concatenate the reference frame to both ends of the video sequence as anchors, then constrain the difference between adjacent background regions. See `_compute_rvm_background_overlap_mse` in `flashtalk_dmd.py`. This keeps the background texture strictly consistent with the reference while preserving smooth temporal transitions between frames.
+- **Pitfall to avoid**: Do not directly align every generated frame's background to the reference-frame background. In our experiments, this destroys temporal continuity and causes severe flickering.
 
-### 6. 训练步数与官方 FlashTalk 的差异
+---
 
-- **说明**：由于我们使用的训练数据集与部分超参数与 FlashTalk 官方并不相同，因此我们实际训练达到收敛的步数跟 FlashTalk 论文中报告的步数也是不一样的。
-- **建议**：在您自己的数据集上进行训练时，也不要完全照搬我们的默认步数或官方论文的步数。请务必根据您实际使用的数据集规模以及模型收敛的实际表现，灵活调整总的训练步数（Iterations）。
+## 2. Training configuration and tuning recommendations
+
+Beyond algorithmic changes, we found several important practical rules while tuning training.
+
+### 2.1 Enable static-background filtering for the dataset (required)
+
+- **Problem**: If the generated camera keeps shaking, the original training videos may already contain background motion.
+- **Approach**: To keep the training data stable, we use RVM for foreground/background segmentation and keep a sample only when the background SSIM is greater than 0.96. The `enable_background_filter` switch exposes this filtering step in Stage 1 preprocessing.
+- **Effect**: Removing samples with shaking backgrounds significantly improves the stability of both Stage 1 and Stage 2.
+
+### 2.2 Reference-frame sampling strategy (adopt InfiniteTalk's approach, required)
+
+- **Problem**: We initially used the first video frame as the reference frame, matching the inference setup. However, during training the motion latent is also the first frame and is noise-free, so the reference frame is quickly "masked out" and cannot anchor the image, which leads to stability issues.
+- **Approach**: We adopt the **InfiniteTalk** strategy and randomly select a frame from a neighboring window as the reference frame.
+- **Effect**: This greatly improves visual stability.
+
+### 2.3 Do not use LoRA; full-parameter fine-tuning is required
+
+- **Problem**: We spent a long time trying LoRA training. With the current number of iterations (1,000 for Stage 1 and 200 for Stage 2 in the original setup), reducing the learning rate had almost no effect, while increasing it made the model worse.
+- **Reason**: LoRA typically needs much longer training schedules to work well, such as LiveAvatar's 27.5k steps with batch size 128. Our goal is fast convergence on a large dataset within roughly 1k + 200 steps, where LoRA is ineffective.
+- **Conclusion**: **This setup requires full-parameter fine-tuning**. The default Stage 1 and Stage 2 configurations in this repository both use full-parameter fine-tuning.
+
+### 2.4 Small datasets, such as one-person fine-tuning, need very few steps
+
+- **Observation**: For small one-person datasets of around 500 videos, it is best to continue training from our large-dataset pretrained model and run only a very small number of additional steps. Training from scratch on a small dataset performs poorly.
+- **Recommendation**: For example, Stage 1 and Stage 2 usually need only **10 extra iterations** each, equivalent to `(10 + 10 // 5) * batchsize` additional samples. Avoid overtraining, because too many steps often degrade model quality.
+
+### 2.5 Per-GPU batch size
+
+- **Note**: In our training runs, `per-GPU-batchsize` has only been tested with the value **1**.
+- **Recommendation**: We do not yet know whether increasing this parameter introduces unknown issues or affects convergence. If you try a larger value, monitor training closely.
+
+### 2.6 Training-step differences from the official FlashTalk paper
+
+- **Explanation**: Because our dataset and some hyperparameters differ from the official FlashTalk setup, the number of iterations needed for convergence also differs from the paper.
+- **Recommendation**: When training on your own dataset, do not copy either our default step counts or the paper's step counts blindly. Adjust the total number of iterations according to your dataset size and observed convergence.
+

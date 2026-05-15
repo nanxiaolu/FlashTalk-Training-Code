@@ -1,56 +1,58 @@
-# 模型权重准备
+# Model Weights Preparation
 
-请将下载的权重统一放置在仓库根目录的 `weights/` 文件夹下，根据自己需要下载模型权重。
+[Chinese version](model_weights_preparation-zh-CN.md)
 
-## 1. 权重与模型一览
+Place all downloaded weights under the `weights/` directory at the repository root. Download the models you need for your workflow.
 
-| 模型目录名 | 说明 | 下载来源 |
+## 1. Weights and models
+
+| Model directory | Description | Source |
 |---|---|---|
-| chinese-wav2vec2-base | （可选）运行 Stage 1/2 特征提取过程时需要，否则不需要。提取音频特征 | [HuggingFace](https://huggingface.co/TencentGameMate/chinese-wav2vec2-base) |
-| face_det | （可选）运行 Stage 1 特征提取过程时需要，否则不需要。配合 insightface 计算脸部区域 mask | [Resnet50](https://github.com/xinntao/facexlib/releases/download/v0.1.0/detection_Resnet50_Final.pth), [bisenet](https://github.com/xinntao/facexlib/releases/download/v0.2.0/parsing_bisenet.pth) |
-| **InfiniteTalk** | **（必选）用于 Stage 1/2 训练。语音相关权重，只需要下载其中的 single 文件夹** | [HuggingFace](https://huggingface.co/MeiGen-AI/InfiniteTalk/tree/main) |
-| insightface | （可选）运行 Stage 1 特征提取过程时需要，否则不需要。脸部检测模型 | [HuggingFace](https://huggingface.co/FrancisRing/StableAnimator/tree/main/models) |
-| q-align | （可选）运行 Stage 1/2 val 之后的 eval 时需要，否则不需要 | [HuggingFace](https://huggingface.co/q-future/one-align/) |
-| **rvm_model** | **（必选）用于 Stage 1 特征提取过程以及 Stage 2 训练。人像分割模型，第一阶段用于筛选数据的背景稳定性（默认不开启），第二阶段用于计算背景一致性loss（提高模型的背景一致性能力）** | [GitHub Release](https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_mobilenetv3.pth) |
-| syncnet | （可选）运行 Stage 1/2 val 之后的 eval 时需要，否则不需要 | [HuggingFace](https://huggingface.co/lithiumice/syncnet) |
-| **Wan2.1-I2V-14B-480P** | **（必选）用于 Stage 1/2 训练。包括 VAE 与文本/视觉编码器 (T5、CLIP)，预训练 DiT** | [HuggingFace](https://huggingface.co/Wan-AI/Wan2.1-I2V-14B-480P) |
-| Ours Stage 1 & Stage 2 训练 ckpt |（可选）我们训练好的两个阶段权重，供快速验证/对比 | [Stage1](https://pan.baidu.com/s/1PNg-QS61aV0pbD1oiGPjxQ?pwd=1426) <br>[Stage2](https://pan.baidu.com/s/1mludcQgg7w3Z014gDYvxPg?pwd=0960) |
+| chinese-wav2vec2-base | Optional. Required only for Stage 1/2 feature extraction. Used for audio feature extraction. | [HuggingFace](https://huggingface.co/TencentGameMate/chinese-wav2vec2-base) |
+| face_det | Optional. Required only for Stage 1 feature extraction. Used with insightface to compute face-region masks. | [Resnet50](https://github.com/xinntao/facexlib/releases/download/v0.1.0/detection_Resnet50_Final.pth), [bisenet](https://github.com/xinntao/facexlib/releases/download/v0.2.0/parsing_bisenet.pth) |
+| **InfiniteTalk** | **Required for Stage 1/2 training. For audio-related weights, only the `single` folder is needed.** | [HuggingFace](https://huggingface.co/MeiGen-AI/InfiniteTalk/tree/main) |
+| insightface | Optional. Required only for Stage 1 feature extraction. Used for face detection. | [HuggingFace](https://huggingface.co/FrancisRing/StableAnimator/tree/main/models) |
+| q-align | Optional. Required only for evaluation after Stage 1/2 validation. | [HuggingFace](https://huggingface.co/q-future/one-align/) |
+| **rvm_model** | **Required for Stage 1 feature extraction and Stage 2 training. This portrait matting model is used in Stage 1 to filter samples by background stability (disabled by default), and in Stage 2 to compute the background-consistency loss.** | [GitHub Release](https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_mobilenetv3.pth) |
+| syncnet | Optional. Required only for evaluation after Stage 1/2 validation. | [HuggingFace](https://huggingface.co/lithiumice/syncnet) |
+| **Wan2.1-I2V-14B-480P** | **Required for Stage 1/2 training. Includes the VAE, text/vision encoders (T5 and CLIP), and pretrained DiT.** | [HuggingFace](https://huggingface.co/Wan-AI/Wan2.1-I2V-14B-480P) |
+| Our Stage 1 & Stage 2 training checkpoints | Optional. Our trained two-stage weights for quick validation, comparison, or fine-tuning. | [Stage1](https://pan.baidu.com/s/1PNg-QS61aV0pbD1oiGPjxQ?pwd=1426) <br>[Stage2](https://pan.baidu.com/s/1mludcQgg7w3Z014gDYvxPg?pwd=0960) |
 
-## 2. 目录结构预期
+## 2. Expected directory structure
 
-下载并解压所有必需文件后，仓库根目录下 `weights/` 的预期结构如下（可选模型缺失不影响训练）：
+After downloading and extracting all required files, the expected `weights/` structure is shown below. Missing optional models do not affect training.
 
 ```
 weights/
 ├── chinese-wav2vec2-base/
-│   ├── chinese-wav2vec2-base-fairseq-ckpt.pt               # 音频编码器
+│   ├── chinese-wav2vec2-base-fairseq-ckpt.pt               # Audio encoder
 │   ├── config.json
 │   ├── model.safetensors
 │   ├── preprocessor_config.json
 │   └── pytorch_model.bin
-├── face_det/                                               # 仅评估时
+├── face_det/                                               # Evaluation only
 │   ├── detection_Resnet50_Final.pth
 │   └── parsing_bisenet.pth
 ├── InfiniteTalk/
 │   └── single/
-│       └── infinitetalk.safetensors                        # 基础 InfiniteTalk DiT
+│       └── infinitetalk.safetensors                        # Base InfiniteTalk DiT
 ├── insightface/
-│   └── models/antelopev2/                                  # 脸部检测 / id / 关键点
+│   └── models/antelopev2/                                  # Face detection / ID / landmarks
 │       ├── 1k3d68.onnx
 │       ├── 2d106det.onnx
 │       ├── genderage.onnx
 │       ├── glintr100.onnx
 │       └── scrfd_10g_bnkps.onnx
-├── q-align/                                                # 仅评估时
+├── q-align/                                                # Evaluation only
 │   ├── config.json
 │   ├── configuration_mplug_owl2.py
 |   └── (...other files...)
 ├── rvm_model/
-│   └── rvm_mobilenetv3.pth                                 # 背景稳定性过滤器
-├── syncnet/                                                # 仅评估时
+│   └── rvm_mobilenetv3.pth                                 # Background-stability filter
+├── syncnet/                                                # Evaluation only
 │   ├── sfd_face.pth
 │   └── syncnet_v2.model
-└── Wan2.1-I2V-14B-480P/                                    # HuggingFace 下载的整个目录
+└── Wan2.1-I2V-14B-480P/                                    # Full HuggingFace directory
     ├── google/umt5-xxl/                                    # T5 tokenizer
     ├── xlm-roberta-large/                                  # CLIP-XLMR tokenizer
     ├── config.json
@@ -61,16 +63,16 @@ weights/
     └── Wan2.1_VAE.pth
 ```
 
-## 3. 如果使用我们训练好的 Checkpoint(可选)
+## 3. Using our trained checkpoints (optional)
 
-假设模型放在 `weights/flashtalk_reproduce/`：
+Assume the checkpoints are placed in `weights/flashtalk_reproduce/`:
 
 ```
 weights/flashtalk_reproduce/
-├── flashtalk_stage1.safetensors    # Stage 1 训练终点权重
-└── flashtalk_stage2.safetensors    # Stage 2 训练终点权重
+├── flashtalk_stage1.safetensors    # Final Stage 1 checkpoint
+└── flashtalk_stage2.safetensors    # Final Stage 2 checkpoint
 ```
 
-* **用 Stage 1 ckpt 作为 Stage 2 训练起点**：把路径写到 `config/train_stage2.yaml` 的 `init_stage1_full`。
-* **用 Stage 2 ckpt 直接验证**：把路径写到 `config/val_stage2.yaml` 的 `resume`。
-* **用 Stage 2 ckpt 部署推理**：先用 `tools/export_stage2_model_to_flashtalk_style.py` 转成 Diffusers 分片格式，再用 SoulX-FlashTalk 推理（详见 [推理章节](train_val_inference.md#5-推理-inference)）。
+* **Use the Stage 1 checkpoint as the Stage 2 initialization**: set `init_stage1_full` in `config/train_stage2.yaml`.
+* **Validate directly with the Stage 2 checkpoint**: set `resume` in `config/val_stage2.yaml`.
+* **Deploy the Stage 2 checkpoint for inference**: first convert it to Diffusers sharded format with `tools/export_stage2_model_to_flashtalk_style.py`, then run inference with SoulX-FlashTalk. See [Inference](train_val_inference.md#5-inference).
