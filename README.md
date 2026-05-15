@@ -74,6 +74,6 @@ The models in this repository are licensed under the Apache 2.0 License. We clai
 granting you the freedom to use them while ensuring that your usage complies with the provisions of this license. 
 You are fully accountable for your use of the models, which must not involve sharing any content that violates applicable laws, causes harm to individuals or groups, disseminates personal information intended for harm, spreads misinformation, or targets vulnerable populations. 
 
-## Contact
+## 📮 Contact
 
 If you have any questions, feel free to open an issue. I will reply within 24 hours.
