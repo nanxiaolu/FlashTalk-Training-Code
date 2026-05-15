@@ -34,6 +34,7 @@ The comparison below shows the official FlashTalk open model on the left and our
 
 The default training configuration targets **8 x NVIDIA A800 (80 GB)**.
 
+- **Reference training time**: on **8 x A800 (80 GB)**, Stage 1 takes about **9 hours** and Stage 2 about **10 hours** with the default configs and the provided training data/features.
 - **Minimum GPU memory**: 4 x 80 GB GPUs such as A800/H800 will run out of memory. 8 x 80 GB is the minimum supported setup for the default configuration.
 - **Scaling to other GPU counts**: if you use 16, 32, 64, or another number of GPUs, see the **[hardware scaling guide](docs/hardware_scaling.md)** and update the corresponding parameters.
 - **Peak RAM usage**: about **1.6 TB**. The peak occurs in Stage 2, where three 14B-parameter models are initialized at the same time.
