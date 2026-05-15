@@ -95,7 +95,7 @@ bash script/val_stage2.sh
 
 ## 5. 推理 (Inference)
 
-本仓库**只包含训练与验证代码**。生产推理（长视频、流式、显存优化等）由 **[SoulX-FlashTalk 官方仓库](https://github.com/Soul-AILab/SoulX-FlashTalk)** 维护，他们对推理做了一些工程优化，强烈建议部署时直接用他们的代码。
+本仓库**只包含训练与验证代码**。推理推荐使用 **[SoulX-FlashTalk 官方仓库](https://github.com/Soul-AILab/SoulX-FlashTalk)** ，他们对推理做了一些工程优化，强烈建议部署时直接用他们的代码。
 
 ### 5.1 模型格式转换
 
@@ -104,7 +104,7 @@ bash script/val_stage2.sh
 ```bash
 python tools/export_stage2_model_to_flashtalk_style.py \
     --src         outputs/flashtalk_stage2/<run_name>/generator_<step>.safetensors \
-    --output_dir  <SoulX-FlashTalk 克隆目录>/models/SoulX-FlashTalk-14B \
+    --output_dir  outputs/models/SoulX-FlashTalk-14B \
     --num_shards  4
 ```
 
@@ -119,7 +119,7 @@ python tools/export_stage2_model_to_flashtalk_style.py \
 └── diffusion_pytorch_model.safetensors.index.json
 ```
 
-把这些文件**覆盖**到 SoulX-FlashTalk 的对应模型目录即可（除上述文件外，其它配置文件保持不变），如下图所示：
+把这些文件**覆盖**到 [SoulX-FlashTalk](https://huggingface.co/Soul-AILab/SoulX-FlashTalk-14B) 的对应模型目录即可（除上述文件外，其它配置文件保持不变），如下图所示：
 
 > ```text
 > FlashTalk/

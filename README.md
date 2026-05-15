@@ -31,7 +31,7 @@
 ## 💻 硬件要求 (Hardware Requirements)
 
 本仓库的默认训练配置基于 **8× NVIDIA A800 (80 GB)**。
-* **显存底线**：4 张 80G 显卡（如 A800/H800）会 OOM，8 卡是最低要求。当前项目的参数按照 8 GPU 配置。
+* **显存底线**：4 张 80G 显卡（如 A800/H800）会 OOM，8 * 80G是最低要求。当前项目的参数按照 8 GPU 配置。
 * **不同卡数扩展**：如果您使用 16、32、64 等其他显卡数量，请参考 **[硬件扩展配置指南](docs/hardware_scaling.md)** 修改对应参数。
 * **内存 (RAM) 峰值**：大约需要 **1.6 TB**。内存峰值出现在 Stage 2 同时初始化三个 14B 参数的模型。
 
@@ -40,18 +40,12 @@
 在开始任何训练或推理之前，请**按顺序**完成以下准备工作：
 1. **[环境配置](docs/environment_preparation.md)**：Conda 环境构建、特定依赖库的安装。
 2. **[数据准备](docs/data_preparation.md)**：下载训练和验证需要的特征，或准备处理自己的数据集。
-3. **[模型权重准备](docs/model_weights_preparation.md)**：所有必要的底层预训练模型、可选的用于评估的模型以及我们提供的训练 Checkpoints 汇总。
+3. **[模型权重准备](docs/model_weights_preparation.md)**：所有必要或可选的底层预训练模型以及我们提供的训练 Checkpoints 汇总。
 
 ## 🚀 训练流程全览 (Training Pipeline)
 
 整个训练管线分为以下阶段，所有步骤详细的运行命令及配置方法请参考 **[训练、验证与推理指南](docs/train_val_inference.md)**。
 > **💡 提示**：为了方便大家对比最终训练效果和快速体验，我们开放了已提取好的大规模数据特征和每个阶段结束后的 Checkpoints 权重。如果您的目标是复现模型性能，您可以灵活利用这些产物跳过某些耗时的训练步骤。
-
-1. **[Stage 1 训练](docs/train_val_inference.md#1-stage-1-训练)**：适应特定数据集分布（如 TalkCuts 中的肢体动作）的全参数 Flow-Matching 微调。
-2. **[Stage 1 验证](docs/train_val_inference.md#2-stage-1-验证)**：用本该进行40步推理的模型直接进行 4 步含 CFG 推理。（注意：此验证仅用于参考模型是否已训练崩溃，非最终画质）。
-3. **[Stage 2 训练](docs/train_val_inference.md#3-stage-2-训练)**：结合 DMD 和 Self-Forcing++ 进行蒸馏，赋予模型4步，CFG-free 推理及从累积噪声中恢复的能力。
-4. **[Stage 2 验证](docs/train_val_inference.md#4-stage-2-验证)**：对最终蒸馏好的模型进行4步CFG-free推理与各类客观指标（IQA，ASE, Sync-C，Sync-D等）的评估。
-5. **[推理部署](docs/train_val_inference.md#5-推理-inference)**：指导如何将产出的单文件 safetensors 转为 Diffusers 格式，并对接 [FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/) 官方推理仓库进行高性能生成。
 
 ## ⚠️ 避坑指南 (Important Tips)
 
@@ -59,10 +53,15 @@
 
 ## 🙇 Acknowledgement
 [FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/): 这个项目复现的论文。
+
 [InfiniteTalk](https://github.com/MeiGen-AI/InfiniteTalk) and [Wan](https://github.com/Wan-Video/Wan2.1): the base model we built upon.
+
 [Self forcing++](https://github.com/justincui03/Self-Forcing-Plus-Plus): FlashTalk使用的 key distillation technique.
+
 [StableAvatar](https://github.com/Francis-Rings/StableAvatar): Stage1训练过程参考他们部分数据处理和loss设计.
-[DMD2](https://github.com/tianweiy/DMD2/tree/main?tab=readme-ov-file), [CausVid](https://github.com/tianweiy/CausVid),[Self-Forcing](https://github.com/guandeh17/Self-Forcing) ，[Self-Forcing-Plus](https://github.com/GoatWu/Self-Forcing-Plus) and [Self forcing++]: 参考他们DMD训练的代码
+
+[DMD2](https://github.com/tianweiy/DMD2/tree/main?tab=readme-ov-file), [CausVid](https://github.com/tianweiy/C
+ausVid),[Self-Forcing](https://github.com/guandeh17/Self-Forcing) ，[Self-Forcing-Plus](https://github.com/GoatWu/Self-Forcing-Plus) and [Self forcing++]: 参考他们DMD训练的代码
 
 ## 📜 License
 The models in this repository are licensed under the Apache 2.0 License. We claim no rights over the your generated contents, 
