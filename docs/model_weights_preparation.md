@@ -8,12 +8,12 @@
 |---|---|---|
 | chinese-wav2vec2-base | （可选）运行 Stage 1/2 特征提取过程时需要，否则不需要。提取音频特征 | [HuggingFace](https://huggingface.co/TencentGameMate/chinese-wav2vec2-base) |
 | face_det | （可选）运行 Stage 1 特征提取过程时需要，否则不需要。配合 insightface 计算脸部区域 mask | [Resnet50](https://github.com/xinntao/facexlib/releases/download/v0.1.0/detection_Resnet50_Final.pth), [bisenet](https://github.com/xinntao/facexlib/releases/download/v0.2.0/parsing_bisenet.pth) |
-| **InfiniteTalk** | （**必选**）用于 Stage 1/2 训练。语音相关权重，只需要下载其中的 single 文件夹 | [HuggingFace](https://huggingface.co/MeiGen-AI/InfiniteTalk/tree/main) |
+| **InfiniteTalk** | **（必选）用于 Stage 1/2 训练。语音相关权重，只需要下载其中的 single 文件夹** | [HuggingFace](https://huggingface.co/MeiGen-AI/InfiniteTalk/tree/main) |
 | insightface | （可选）运行 Stage 1 特征提取过程时需要，否则不需要。脸部检测模型 | [HuggingFace](https://huggingface.co/FrancisRing/StableAnimator/tree/main/models) |
 | q-align | （可选）运行 Stage 1/2 val 之后的 eval 时需要，否则不需要 | [HuggingFace](https://huggingface.co/q-future/one-align/) |
-| **rvm_model** | （**必选**）用于 Stage 1 特征提取过程以及 Stage 2 训练。人像分割模型，第一阶段用于筛选数据的背景稳定性（默认不开启），第二阶段用于计算背景一致性loss（提高模型的背景一致性能力） | [GitHub Release](https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_mobilenetv3.pth) |
+| **rvm_model** | **（必选）用于 Stage 1 特征提取过程以及 Stage 2 训练。人像分割模型，第一阶段用于筛选数据的背景稳定性（默认不开启），第二阶段用于计算背景一致性loss（提高模型的背景一致性能力）** | [GitHub Release](https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_mobilenetv3.pth) |
 | syncnet | （可选）运行 Stage 1/2 val 之后的 eval 时需要，否则不需要 | [HuggingFace](https://huggingface.co/lithiumice/syncnet) |
-| **Wan2.1-I2V-14B-480P** | （**必选**）用于 Stage 1/2 训练。包括 VAE 与文本/视觉编码器 (T5、CLIP)，预训练 DiT | [HuggingFace](https://huggingface.co/Wan-AI/Wan2.1-I2V-14B-480P) |
+| **Wan2.1-I2V-14B-480P** | **（必选）用于 Stage 1/2 训练。包括 VAE 与文本/视觉编码器 (T5、CLIP)，预训练 DiT** | [HuggingFace](https://huggingface.co/Wan-AI/Wan2.1-I2V-14B-480P) |
 | Ours Stage 1 & Stage 2 训练 ckpt |（可选）我们训练好的两个阶段权重，供快速验证/对比 | [Stage1](https://pan.baidu.com/s/1PNg-QS61aV0pbD1oiGPjxQ?pwd=1426) <br>[Stage2](https://pan.baidu.com/s/1mludcQgg7w3Z014gDYvxPg?pwd=0960) |
 
 ## 2. 目录结构预期
