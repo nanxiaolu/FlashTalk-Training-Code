@@ -2,7 +2,7 @@
 
 > **非官方实现。** 本仓库是在 [InfiniteTalk](https://github.com/MeiGen-AI/InfiniteTalk) 基础模型之上对 [FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/) 训练方案的独立复现。它未经 [FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/) 或 [InfiniteTalk](https://github.com/MeiGen-AI/InfiniteTalk) 原作者的审查或认可。超参数、消融实验和工程选择可能与官方发布有所不同（详见 **[Tips: 与官方 FlashTalk 实现的核心差异及原因](docs/tips-zh-CN.md#一-与官方-flashtalk-实现的核心差异及原因)**）。
 
-[FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/) 是一个能够**实时（Real-Time）**生成无限长度的语音驱动数字人模型，它将原本需要 40 步、依赖 CFG（分类器引导）的 InfiniteTalk 压缩为 **4 步、无 CFG** 的**自纠正（Self-Correcting）**模型，同时在包含手部的半身数据上保持较好的性能。本仓库包含了完整的训练代码。
+[FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk/) 是一个能够**实时**生成无限长度的语音驱动数字人模型，它将原本需要 40 步、依赖 CFG（分类器引导）的 InfiniteTalk 压缩为 **4 步、无 CFG** 的 **自纠正** 模型，同时在包含手部的半身数据上保持较好的性能。本仓库包含了完整的训练代码。
 
 ## 🌟 核心亮点
 
