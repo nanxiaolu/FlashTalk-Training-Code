@@ -68,9 +68,9 @@ weights/
 ```
 weights/flashtalk_reproduce/
 ├── flashtalk_stage1.safetensors    # Stage 1 训练终点权重
-└── flashtalk_stage2.safetensors    # Stage 2 训练终点权重（可直接配合 SoulX-FlashTalk 推理）
+└── flashtalk_stage2.safetensors    # Stage 2 训练终点权重
 ```
 
 * **用 Stage 1 ckpt 作为 Stage 2 训练起点**：把路径写到 `config/train_stage2.yaml` 的 `init_stage1_full`。
 * **用 Stage 2 ckpt 直接验证**：把路径写到 `config/val_stage2.yaml` 的 `resume`。
-* **用 Stage 2 ckpt 部署推理**：先用 `tools/export_stage2_model_to_flashtalk_style.py` 转成 Diffusers 分片格式，再用 [SoulX-FlashTalk](https://github.com/Soul-AILab/SoulX-FlashTalk) 推理（详见 [推理章节](train_val_inference.md#5-推理-inference)）。
+* **用 Stage 2 ckpt 部署推理**：先用 `tools/export_stage2_model_to_flashtalk_style.py` 转成 Diffusers 分片格式，再用 SoulX-FlashTalk 推理（详见 [推理章节](train_val_inference.md#5-推理-inference)）。

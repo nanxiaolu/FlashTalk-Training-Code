@@ -19,7 +19,7 @@
 **配置文件**：`config/train_stage1.yaml`。  
 请修改 `config/train_stage1.yaml` 的 `lmdb_path` ，默认指向我们提供的预提取特征。
 
-> **注**：由于我们的数据集与官方不同，训练的迭代步数与FlashTalk论文里的不一致，这里采用 `max_steps` = 500 即可达到最优效果（原版 FlashTalk 论文中为 1000 iters）。
+> **注**：由于数据集和部分超参数差异，训练的迭代步数与FlashTalk论文里的不一致，这里采用 `max_steps` = 500 即可达到最优效果（原版 FlashTalk 论文中为 1000 iters）。
 
 **启动**：
 
@@ -27,7 +27,7 @@
 bash script/train_stage1.sh
 ```
 
-**产物**：保存在 `outputs/flashtalk_stage1/<run_name>/`，其中包含若干 `models_<step>.safetensors`（单文件），后面 Stage 2 通过 `init_stage1_full` 字段引用其中一份作为初始权重。
+**产物**：保存在 `outputs/flashtalk_stage1/<run_name>/`，其中包含若干 `model_<step>.safetensors`（单文件），后面 Stage 2 通过 `init_stage1_full` 字段引用其中一份作为初始权重。
 
 ---
 
@@ -35,9 +35,9 @@ bash script/train_stage1.sh
 
 > ⚠️ **重要**：Stage 1 模型尚未经过 DMD 蒸馏，但出于工程便利我们直接用 Stage 2 的 4 步含 CFG 来验证它。**这一步的画质并不代表 Stage 1 真实能力**，仅用来快速判断模型是否训崩，**不能**作为最终效果对比依据。
 
-**配置文件**：`config/val_stage1.yaml`。运行前**必须**补充 `init_stage1_full` 参数，将其指向你上一步训出的 `generator_<step>.safetensors` 路径（也可以是我们提供的预训练 Stage 1 ckpt）。
+**配置文件**：`config/val_stage1.yaml`。运行前**必须**补充 `init_stage1_full` 参数，将其指向你上一步训出的 `model_<step>.safetensors` 路径（也可以是我们提供的预训练 Stage 1 ckpt）。
 
-**注意**：在script/val_stage1.sh里运行的是 `train_flashtalk_stage2.py`，**这不是笔误**——val过程都用`train_flashtalk_stage2.py`脚本来执行。`config/val_stage1.yaml` 通过 `val_only` 字段告诉它"我只是想加载一个 Stage 1 权重做验证，别开始训练"。
+**注意**：在script/val_stage1.sh里运行的是 `train_flashtalk_stage2.py`，**这不是笔误**——val过程都用`train_flashtalk_stage2.py`脚本来执行。
 
 **启动**：
 
@@ -59,11 +59,11 @@ bash script/val_stage1.sh
 
 **配置文件**：`config/train_stage2.yaml`。运行前需要确认/修改：
 
-- `init_stage1_full`：**必须补充**，指向 Stage 1 训练产出的 `generator_<step>.safetensors`（或我们提供的 Stage 1 ckpt）。
+- `init_stage1_full`：**必须补充**，指向 Stage 1 训练产出的 `model_<step>.safetensors`（或我们提供的 Stage 1 ckpt）。
 - `lmdb_path`：默认指向大规模 TalkCuts 数据集 `processed_data/talkcuts/train/stage2_sample_6400.lmdb`。如果是跑示例，请修改为你提取的示例 LMDB；如果是自定义数据，请修改为你 pack 出来的 LMDB。
 - `gen_grad_accum_steps` / `critic_grad_accum_steps`：默认 4/4 对应 8 GPU (batchsize=32)。
 
-> **注**：同理，由于数据集差异，Stage 2 配置文件中的 `max_steps` 设为 100 即可（原版 FlashTalk 论文中为 200 iters）。
+> **注**：同理，由于数据集和部分超参数差异，Stage 2 配置文件中的 `max_steps` 设为 100 即可（原版 FlashTalk 论文中为 200 iters）。
 
 **启动**：
 
