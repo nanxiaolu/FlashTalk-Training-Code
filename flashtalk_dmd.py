@@ -53,9 +53,9 @@ def get_wan_model(config, checkpoint_dir, weight_files=None, debug=False):
     return model
 
 
-class InfiniteTalkDMD(nn.Module):
+class FlashTalkDMD(nn.Module):
     """
-    DMD (Distribution Matching Distillation) module for InfiniteTalk.
+    DMD (Distribution Matching Distillation) module for FlashTalk.
 
     Roles:
     - Generator (Student): the model being trained for few-step generation.

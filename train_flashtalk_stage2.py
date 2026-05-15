@@ -17,10 +17,10 @@ from torch.utils.data import DataLoader, DistributedSampler, Subset
 from torch.utils.tensorboard import SummaryWriter
 from PIL import Image
 
-from infinitetalk_dmd import InfiniteTalkDMD
+from flashtalk_dmd import FlashTalkDMD
 from src.data_processor_flashtalk import (
     DataProcessor,
-    InfiniteTalkDataset,
+    FlashTalkDataset,
     LmdbBatchReader,
     _batch_to_cpu,
     load_video_window,
@@ -626,7 +626,7 @@ def main():
 
     if args.mode == "preprocess":
         # Only preprocess mode walks raw video/audio via a DataLoader.
-        dataset = InfiniteTalkDataset(args.dataset_dir, annotation_file=args.annotation_file)
+        dataset = FlashTalkDataset(args.dataset_dir, annotation_file=args.annotation_file)
         sampler = DistributedSampler(dataset, shuffle=True, seed=args.seed + rank, drop_last=True)
         dataloader = DataLoader(dataset, batch_size=args.batch_size, sampler=sampler, collate_fn=lambda x: x)
         dataloader = itertools.cycle(dataloader)
@@ -653,7 +653,7 @@ def main():
 
     val_dataloader = None
     if args.val_only:
-        val_dataset = InfiniteTalkDataset(args.dataset_dir, annotation_file=args.val_annotation_file)
+        val_dataset = FlashTalkDataset(args.dataset_dir, annotation_file=args.val_annotation_file)
         # Shard validation samples by rank without padding/duplication.
         local_indices = list(range(rank, len(val_dataset), world_size))
         val_subset = Subset(val_dataset, local_indices)
@@ -663,7 +663,7 @@ def main():
     # - val_only: only load generator for inference.
     # - training: load generator + real_score + fake_score (three models).
     dmd_stage = "val_only" if args.val_only else "stage2"
-    dmd_model = InfiniteTalkDMD(
+    dmd_model = FlashTalkDMD(
         config, device, args.ckpt_dir, args.infinitetalk_dir,
         stage=dmd_stage, debug=args.debug,
     )

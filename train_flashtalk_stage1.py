@@ -16,10 +16,10 @@ from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader, DistributedSampler
 from torch.utils.tensorboard import SummaryWriter
 
-from infinitetalk_dmd import InfiniteTalkDMD
+from flashtalk_dmd import FlashTalkDMD
 from src.data_processor_flashtalk import (
     DataProcessor,
-    InfiniteTalkDataset,
+    FlashTalkDataset,
     LmdbBatchReader,
     move_VAE_to_device,
     preprocess_batches_to_payload_files,
@@ -424,7 +424,7 @@ def main():
 
     if args.mode == "preprocess":
         # Only preprocess mode walks raw video/audio via a DataLoader.
-        dataset = InfiniteTalkDataset(args.dataset_dir, annotation_file=args.annotation_file)
+        dataset = FlashTalkDataset(args.dataset_dir, annotation_file=args.annotation_file)
         sampler = DistributedSampler(dataset, shuffle=True, seed=args.seed, drop_last=True)
         dataloader = DataLoader(dataset, batch_size=args.batch_size, sampler=sampler, collate_fn=lambda x: x)
         dataloader = itertools.cycle(dataloader)
@@ -459,7 +459,7 @@ def main():
         return
 
     # Stage-1 only needs the generator (full fine-tune flow matching).
-    dmd_model = InfiniteTalkDMD(
+    dmd_model = FlashTalkDMD(
         config, device, args.ckpt_dir, args.infinitetalk_dir,
         stage="stage1", debug=args.debug,
     )

@@ -1,6 +1,6 @@
 """
-Data processing module for InfiniteTalk training.
-Contains DataProcessor, InfiniteTalkDataset, and helper functions for loading/processing data.
+Data processing module for FlashTalk training.
+Contains DataProcessor, FlashTalkDataset, and helper functions for loading/processing data.
 """
 import gc
 import importlib
@@ -292,7 +292,7 @@ class FaceMaskExtractor:
         return np.stack(masks, axis=0)
 
 
-class InfiniteTalkDataset(Dataset):
+class FlashTalkDataset(Dataset):
     def __init__(self, dataset_dir, annotation_file):
         """
         Dataset for loading TalkCuts training data from a CSV annotation file.
@@ -1556,7 +1556,7 @@ def preprocess_validation_features(
     """
     import torch.distributed as dist
 
-    dataset = InfiniteTalkDataset(dataset_dir, annotation_file=annotation_file)
+    dataset = FlashTalkDataset(dataset_dir, annotation_file=annotation_file)
     os.makedirs(output_dir, exist_ok=True)
 
     written = 0

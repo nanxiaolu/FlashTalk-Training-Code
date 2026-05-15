@@ -2,8 +2,8 @@
 
 本仓库的默认配置基于 **8× A800 (80 GB)**。如果你要在 16/32/64 等其它卡数上跑，**必须**修改两类参数：
 
-1. **训练 YAML 里的梯度累积步数**：项目默认是 8卡 * 4 步梯度累积，batchsize=32，根据你的需要修改。
-2. **Stage 2 LMDB 的 `--group_size`**：由于 FSDP 的原因，不同GPU的样本的chunk数 K 必须一致，`group_size`就是lmdb里每group_size个样本的K一致。该值必须等于实际训练用的 GPU 数。如果你换了GPU数，group_size需要满足(group_size % GPU_num == 0)。可以在[pyloads->lmdb](script/pack_stage2.sh)时指定group_size，也可以在[lmdb->lmdb](tools/repack_stage2_lmdb_group_size.py)时转化group_size。
+1. **训练 YAML 里的梯度累积步数**：项目默认是 8卡 * 4 步梯度累积，即batchsize=32，根据你的需要修改。
+2. **Stage 2 LMDB 的 `--group_size`**：由于 FSDP 的原因，第二阶段训练中不同GPU的样本的chunk数 K 必须一致，`group_size`的含义是lmdb里每group_size个样本的K一致。该值必须等于实际训练用的 GPU 数。如果你换了GPU数，group_size需要满足(group_size % GPU_num == 0， 推荐group_size == GPU_num)。可以在[pyloads->lmdb](script/pack_stage2.sh)时指定group_size，也可以在[lmdb->lmdb](tools/repack_stage2_lmdb_group_size.py)时转化group_size。
 
 > Stage 1 不存在 K-grouping 问题。
 
