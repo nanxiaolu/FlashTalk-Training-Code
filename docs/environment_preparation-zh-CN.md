@@ -9,41 +9,43 @@
 | PyTorch | 2.4.1 + cu121 |
 | 硬件 | 8 × A800|
 
-## Step 1 — 创建 conda 环境
+## 步骤 1：创建 conda 环境
 
 ```bash
 conda create -n flashtalk_train python=3.10.18 -y
 conda activate flashtalk_train
 ```
 
-## Step 2 — 安装 PyTorch（cu121）
+## 步骤 2：安装 PyTorch（cu121）
 
 ```bash
 pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu121
 ```
 
-## Step 3 — 安装项目依赖
+## 步骤 3：安装项目依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Step 4 — 单独安装 flash-attn（**必装**）
+## 步骤 4：单独安装 flash-attn（**必装**）
 ```bash
 # A 系列（A100 / A800 / A40 / A30 / A6000 ...）：使用 flash-attn v2
 pip install flash-attn==2.7.4.post1 --no-build-isolation
-# H 系列（H100 / H800 / H200 ...）：使用 flash-attn v3 性能更佳.
-# 如果pip在线安装不了，可以到“https://github.com/Dao-AILab/flash-attention/releases?page=3”选择适用于你环境的版本下载到服务器，再pip离线install
+# H 系列（H100 / H800 / H200 …）：使用 flash-attn v3 性能更佳。
+# 若 pip 在线安装失败，可到「https://github.com/Dao-AILab/flash-attention/releases?page=3」下载适配本机的预编译 wheel，再在服务器上 pip 离线安装。
 ```
 
-## Step 5 — FFmpeg installation
+## 步骤 5：安装 FFmpeg
 
 ```bash
 # Ubuntu / Debian
 apt-get install ffmpeg
 ```
-or
+
+或
+
 ```bash
-# Conda (no root required) 
+# Conda（无需 root）
 conda install -c conda-forge ffmpeg==7
 ```

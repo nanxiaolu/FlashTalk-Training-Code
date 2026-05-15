@@ -37,7 +37,7 @@ bash script/train_stage1.sh
 
 **配置文件**：`config/val_stage1.yaml`。运行前**必须**补充 `init_stage1_full` 参数，将其指向你上一步训出的 `model_<step>.safetensors` 路径（也可以是我们提供的预训练 Stage 1 ckpt）。
 
-**注意**：在script/val_stage1.sh里运行的是 `train_flashtalk_stage2.py`，**这不是笔误**——val过程都用`train_flashtalk_stage2.py`脚本来执行。
+**注意**：在 `script/val_stage1.sh` 里实际运行的是 `train_flashtalk_stage2.py`，**这不是笔误**——验证阶段统一通过该脚本执行。
 
 **启动**：
 
@@ -61,7 +61,7 @@ bash script/val_stage1.sh
 
 - `init_stage1_full`：**必须补充**，指向 Stage 1 训练产出的 `model_<step>.safetensors`（或我们提供的 Stage 1 ckpt）。
 - `lmdb_path`：默认指向大规模 TalkCuts 数据集 `processed_data/talkcuts/train/stage2_sample_6400.lmdb`。如果是跑示例，请修改为你提取的示例 LMDB；如果是自定义数据，请修改为你 pack 出来的 LMDB。
-- `gen_grad_accum_steps` / `critic_grad_accum_steps`：默认 4/4 对应 8 GPU (batchsize=32)。
+- `gen_grad_accum_steps` / `critic_grad_accum_steps`：默认 4/4 对应 8 GPU（有效 batch size = 32）。
 
 > **注**：同理，由于数据集和部分超参数差异，Stage 2 配置文件中的 `max_steps` 设为 100 即可（原版 FlashTalk 论文中为 200 iters）。
 
@@ -79,7 +79,7 @@ bash script/train_stage2.sh
 
 走真实推理路径：4 步、CFG-free、含动作注入、含 self-forcing chunked rollout。除生成视频外，验证脚本还会跑 **Sync-C / Sync-D / IQA / Aesthe** 四个客观指标（需要先下载评估模型，见 [model_weights_preparation-zh-CN.md](model_weights_preparation-zh-CN.md)）。
 
-**配置文件**：`config/val_stage2.yaml`。运行前**必须**补充 `resume_from` 参数，val 的是`resume_from` 参数指向的模型。需要将其指向 Stage 2 训练输出的 checkpoint 目录（脚本会自动从该目录加载 `generator_<step>.safetensors`）。
+**配置文件**：`config/val_stage2.yaml`。运行前**必须**补充 `resume_from` 参数，将其指向 Stage 2 训练输出的 checkpoint 目录；**验证时实际加载的是** `resume_from` **所指定的**模型（脚本会自动从该目录加载 `generator_<step>.safetensors`）。
 
 **启动**：
 
@@ -87,19 +87,19 @@ bash script/train_stage2.sh
 bash script/val_stage2.sh
 ```
 
-> val 后会自动运行eval，也可以单独运行run_evaluate_gt_standalone.py评估一个文件夹下所有视频，详细用法可以看run_evaluate_gt_standalone.py最开头的注释。
+> 验证结束后会自动运行评估脚本；也可单独运行 `run_evaluate_gt_standalone.py` 评估某一目录下的全部视频，用法见该文件开头的注释。
 
 **产物**：生成视频与逐样本/整体指标 JSON 写到 `outputs/val_stage2/<run_name>/`。
 
 ---
 
-## 5. 推理 (Inference)
+## 5. 推理
 
 本仓库**只包含训练与验证代码**。推理推荐使用 **[SoulX-FlashTalk 官方仓库](https://github.com/Soul-AILab/SoulX-FlashTalk)** ，他们对推理做了一些工程优化，强烈建议部署时直接用他们的代码。
 
 ### 5.1 模型格式转换
 
-我们训练保存的是单文件 `generator_<step>.safetensors`（全部参数挤在一个 file 里），而 SoulX-FlashTalk 推理代码要求 HuggingFace Diffusers 的分片 safetensors 格式。提供了一个转换工具：
+我们训练保存的是单文件 `generator_<step>.safetensors`（全部权重保存在一个文件中），而 SoulX-FlashTalk 推理代码要求 HuggingFace Diffusers 的分片 safetensors 格式。提供了一个转换工具：
 
 ```bash
 python tools/export_stage2_model_to_flashtalk_style.py \

@@ -3,7 +3,7 @@
 最终需要的有3个数据：
 1）第一阶段训练所需特征 (.lmdb)
 2）第二阶段训练所需特征 (.lmdb)
-3）第一第二阶段共用的val特征 (Folder)
+3）第一阶段与第二阶段共用的验证集特征（文件夹）
 
 本仓库的数据准备共有两条可选路径：
 
@@ -14,7 +14,7 @@
 
 ---
 
-## 1. 数据处理pipeline
+## 1. 数据处理流水线
 
 ```
               ┌───────────────────────────┐          ┌──────────────────────┐        ┌───────────┐
@@ -149,7 +149,7 @@ python tools/payload_files_to_lmdb.py \
     --shuffle_k_groups  false
 ```
 
-Stage 1 没有 K 维度概念，`--shuffle_k_groups false` 是正确选项。改过程会把可能不连续的 key 重排为连续的 `0..N-1`。
+Stage 1 没有 K 维度概念，`--shuffle_k_groups false` 是正确选项。该过程会把可能不连续的 key 重排为连续的 `0..N-1`。
 
 ### 3.4 Stage 2 预处理（自己的数据集）
 
@@ -195,6 +195,6 @@ val_annotation_file: your csv file
 val_features_dir: your feature output path
 ```
 
-完成后每条验证样本会有一个子目录存放它的所有特征，并在 `val_features_dir/context_null.pt` 写入共享的negtive文本编码（推理时 CFG 用）。
+完成后每条验证样本会有一个子目录存放它的所有特征，并在 `val_features_dir/context_null.pt` 写入共享的 negtive 文本编码（推理时 CFG 用）。
 
 如果你想，也可以直接用路径 A 提供的特征。
