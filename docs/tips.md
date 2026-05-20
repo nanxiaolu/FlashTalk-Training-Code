@@ -58,7 +58,6 @@ Beyond algorithmic changes, we found several important practical rules while tun
 ### 2.4 Small datasets, such as one-person fine-tuning, need very few steps
 
 - **Observation**: For small one-person datasets of around 500 videos, it is best to continue training from our large-dataset pretrained model and run only a very small number of additional steps. Training from scratch on a small dataset performs poorly.
-- **Recommendation**: For example, Stage 1 and Stage 2 usually need only **10 extra iterations** each, equivalent to `(10 + 10 // 5) * batchsize` additional samples. Avoid overtraining, because too many steps often degrade model quality.
 
 ### 2.5 Per-GPU batch size
 
