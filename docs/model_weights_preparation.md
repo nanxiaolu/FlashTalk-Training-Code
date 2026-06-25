@@ -16,7 +16,7 @@ Place all downloaded weights under the `weights/` directory at the repository ro
 | **rvm_model** | **Required for Stage 1 feature extraction and Stage 2 training. This portrait matting model is used in Stage 1 to filter samples by background stability (disabled by default), and in Stage 2 to compute the background-consistency loss.** | [GitHub Release](https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_mobilenetv3.pth) |
 | syncnet | Optional. Required only for evaluation after Stage 1/2 validation. | [HuggingFace](https://huggingface.co/lithiumice/syncnet) |
 | **Wan2.1-I2V-14B-480P** | **Required for Stage 1/2 training. Includes the VAE, text/vision encoders (T5 and CLIP), and pretrained DiT.** | [HuggingFace](https://huggingface.co/Wan-AI/Wan2.1-I2V-14B-480P) |
-| Our Stage 1 & Stage 2 training checkpoints | Optional. Our trained two-stage weights for quick validation, comparison, or fine-tuning. | [Stage1](https://pan.baidu.com/s/1PNg-QS61aV0pbD1oiGPjxQ?pwd=1426) <br>[Stage2](https://pan.baidu.com/s/1mludcQgg7w3Z014gDYvxPg?pwd=0960) |
+| Our Stage 1 & Stage 2 training checkpoints | Optional. Our trained two-stage weights for quick validation, comparison, or fine-tuning. | [Stage1](https://modelscope.cn/models/youngsx/FlashTalk_Reproduction/files) <br>[Stage2](https://modelscope.cn/models/youngsx/FlashTalk_Reproduction/files) |
 
 ## 2. Expected directory structure
 
