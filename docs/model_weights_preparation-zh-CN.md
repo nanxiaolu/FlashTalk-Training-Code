@@ -14,7 +14,7 @@
 | **rvm_model** | **（必选）用于 Stage 1 特征提取过程以及 Stage 2 训练。人像分割模型，第一阶段用于筛选数据的背景稳定性（默认不开启），第二阶段用于计算背景一致性loss（提高模型的背景一致性能力）** | [GitHub Release](https://github.com/PeterL1n/RobustVideoMatting/releases/download/v1.0.0/rvm_mobilenetv3.pth) |
 | syncnet | （可选）Stage 1/2 验证完成后的客观评估时需要，否则不需要 | [HuggingFace](https://huggingface.co/lithiumice/syncnet) |
 | **Wan2.1-I2V-14B-480P** | **（必选）用于 Stage 1/2 训练。包括 VAE 与文本/视觉编码器 (T5、CLIP)，预训练 DiT** | [HuggingFace](https://huggingface.co/Wan-AI/Wan2.1-I2V-14B-480P) |
-| 我们训练的 Stage 1 & Stage 2 ckpt |（可选）我们训练好的两个阶段权重，供快速验证/对比 | [Stage1](https://pan.baidu.com/s/1PNg-QS61aV0pbD1oiGPjxQ?pwd=1426) <br>[Stage2](https://pan.baidu.com/s/1mludcQgg7w3Z014gDYvxPg?pwd=0960) |
+| 我们训练的 Stage 1 & Stage 2 ckpt |（可选）我们训练好的两个阶段权重，供快速验证/对比 | [Stage1](https://modelscope.cn/models/youngsx/FlashTalk_Reproduction/files) <br>[Stage2](https://modelscope.cn/models/youngsx/FlashTalk_Reproduction/files) |
 
 ## 2. 目录结构预期
 
