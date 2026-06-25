@@ -64,9 +64,9 @@ We have preprocessed and packed the TalkCuts data into Baidu Netdisk files. Afte
 
 | File | Purpose | Extract to | Download |
 | --- | --- | --- | --- |
-| `talkcuts.tar.gz` | Contains 12 validation samples with pre-extracted features and raw audio/video, `val_data.csv`, and an empty `train` folder. | `processed_data/` | [Baidu Netdisk](https://pan.baidu.com/s/1uEF6QpVih9EotDPKY7W99g?pwd=dc7b) |
-| `stage1_sample_25030.lmdb` | Stage 1 training LMDB, about 25,000 samples. | `processed_data/talkcuts/train/` | [Baidu Netdisk](https://pan.baidu.com/s/1zlFI70481g5HHt1FoFJwag?pwd=f94a) |
-| `stage2_sample_6400.lmdb` | Stage 2 training LMDB, 6,400 samples, **packed for 8 GPUs**. | `processed_data/talkcuts/train/` | [Baidu Netdisk](https://pan.baidu.com/s/1ksSThfOVuccOnHmAZwYU-Q?pwd=v9fa) |
+| `talkcuts.tar.gz` | Contains 12 validation samples with pre-extracted features and raw audio/video, `val_data.csv`, and an empty `train` folder. | `processed_data/` | [ModelScope](https://modelscope.cn/models/youngsx/FlashTalk_Reproduction/files) |
+| `stage1_sample_25030.lmdb` | Stage 1 training LMDB, about 25,000 samples. | `processed_data/talkcuts/train/` | [ModelScope](https://modelscope.cn/models/youngsx/FlashTalk_Reproduction/files) |
+| `stage2_sample_6400.lmdb` | Stage 2 training LMDB, 6,400 samples, **packed for 8 GPUs**. | `processed_data/talkcuts/train/` | [ModelScope](https://modelscope.cn/models/youngsx/FlashTalk_Reproduction/files) |
 
 > ⚠️ If you are not training with 8 GPUs, `stage2_sample_6400.lmdb` **must be repacked**. See [hardware_scaling.md](hardware_scaling.md).
 > The default `config/train_stage1.yaml` and `config/train_stage2.yaml` already point to these paths. If you change the paths, update the corresponding config fields.
@@ -79,7 +79,7 @@ We have preprocessed and packed the TalkCuts data into Baidu Netdisk files. Afte
 
 ### 3.1 Run the full pipeline with 32 example samples
 
-We provide [32 raw video + audio samples](https://pan.baidu.com/s/1GBubHORr7Zb9o09_pMwGHg?pwd=1983) as a minimal runnable example for the data-processing pipeline. Extract them to `processed_data/example`.
+We provide [32 raw video + audio samples](https://modelscope.cn/models/youngsx/FlashTalk_Reproduction/files) as a minimal runnable example for the data-processing pipeline. Extract them to `processed_data/example`.
 
 ```bash
 # Stage 1: preprocess + pack
