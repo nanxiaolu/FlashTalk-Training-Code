@@ -62,9 +62,9 @@ processed_data/
 
 | 文件名                        | 用途                                                       | 解压目标                             | 下载链接                                                             |
 | -------------------------- | -------------------------------------------------------- | -------------------------------- | ---------------------------------------------------------------- |
-| `talkcuts.tar.gz`          | 包含 12 条验证样本（预提取特征及原始音视频）、`val_data.csv` 以及空的 `train` 文件夹 | `processed_data/`                | [百度网盘](https://pan.baidu.com/s/1uEF6QpVih9EotDPKY7W99g?pwd=dc7b) |
-| `stage1_sample_25030.lmdb` | Stage 1 训练用 LMDB（≈25,000 样本）                             | `processed_data/talkcuts/train/` | [百度网盘](https://pan.baidu.com/s/1zlFI70481g5HHt1FoFJwag?pwd=f94a) |
-| `stage2_sample_6400.lmdb`  | Stage 2 训练用 LMDB（6,400 样本，**按 8 GPU 打包**）                | `processed_data/talkcuts/train/` | [百度网盘](https://pan.baidu.com/s/1ksSThfOVuccOnHmAZwYU-Q?pwd=v9fa) |
+| `talkcuts.tar.gz`          | 包含 12 条验证样本（预提取特征及原始音视频）、`val_data.csv` 以及空的 `train` 文件夹 | `processed_data/`                | [魔搭社区](https://modelscope.cn/models/youngsx/FlashTalk_Reproduction/files) |
+| `stage1_sample_25030.lmdb` | Stage 1 训练用 LMDB（≈25,000 样本）                             | `processed_data/talkcuts/train/` | [魔搭社区](https://modelscope.cn/models/youngsx/FlashTalk_Reproduction/files) |
+| `stage2_sample_6400.lmdb`  | Stage 2 训练用 LMDB（6,400 样本，**按 8 GPU 打包**）                | `processed_data/talkcuts/train/` | [魔搭社区](https://modelscope.cn/models/youngsx/FlashTalk_Reproduction/files) |
 
 
 > ⚠️ `stage2_sample_6400.lmdb` 非 8 卡训练**必须**重新 pack。详见[hardware_scaling-zh-CN.md](hardware_scaling-zh-CN.md)。
@@ -78,7 +78,7 @@ processed_data/
 
 ### 3.1 用 32 条示例数据跑通整套流程
 
-提前准备了[32条原始视频➕音频](https://pan.baidu.com/s/1GBubHORr7Zb9o09_pMwGHg?pwd=1983)作为最小可运行示例供大家跑通处理数据过程，解压放到 `processed_data/example`。
+提前准备了[32条原始视频➕音频](https://modelscope.cn/models/youngsx/FlashTalk_Reproduction/files)作为最小可运行示例供大家跑通处理数据过程，解压放到 `processed_data/example`。
 
 ```bash
 # Stage 1：预处理 + 打包
